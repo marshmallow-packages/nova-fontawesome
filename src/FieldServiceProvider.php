@@ -1,6 +1,6 @@
 <?php
 
-namespace Mdixon18\Fontawesome;
+namespace Marshmallow\NovaFontAwesome;
 
 use Laravel\Nova\Nova;
 use Laravel\Nova\Events\ServingNova;
@@ -16,7 +16,7 @@ class FieldServiceProvider extends ServiceProvider
     public function boot()
     {
         Nova::serving(function (ServingNova $event) {
-            Nova::script('fontawesome', __DIR__.'/../dist/js/field.js');
+            Nova::script('nova-fontawesome', __DIR__ . '/../dist/js/nova-fontawesome.js');
         });
     }
 

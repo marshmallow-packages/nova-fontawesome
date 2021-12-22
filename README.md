@@ -1,19 +1,21 @@
-# FontAwesome Icons
-A Laravel Nova FontAwesome Icon field
+# Font Awesome Icons
+
+A Laravel Nova Font Awesome Icon field
 
 ## Installation:
 
 You can install the package in to a Laravel app that uses Nova via composer:
 
 ```bash
-composer require mdixon18/fontawesome
+composer require marshmallow/nova-fontawesome
 ```
 
 ## Usage:
+
 Add the below to app/Nova resources.
 
 ```php
-  use Mdixon18\Fontawesome\Fontawesome;
+  use Marshmallow\NovaFontAwesome\Fontawesome;
 
   Fontawesome::make('Icon')
 ```
@@ -37,6 +39,7 @@ If you want to persist the default icon (when they press clear it brings back th
 ```
 
 You can limit the icons the user can choose from like so
+
 ```php
   Fontawesome::make('Icon')->only([
     'facebook',
@@ -45,13 +48,45 @@ You can limit the icons the user can choose from like so
   ])
 ```
 
-You can use FontAwesome Pro by doing the following (remember to get your license key!)
+You can use Font Awesome Pro by doing the following (remember to get your license key!)
+
 ```php
   Fontawesome::make('Icon')->pro()
 ```
 
-## Support:
-mdixon14717@gmail.com
+## Development
+
+```zsh
+FONTAWESOME_NPM_AUTH_TOKEN=YOUR_TOKEN npm install
+```
+
+FONTAWESOME_NPM_AUTH_TOKEN=4BFC633F-983F-4250-81CE-37EB23209AE4 npm i
+
+Free:
+@fortawesome/fontawesome-free@next
+@fortawesome/fontawesome-svg-core@next
+@fortawesome/free-solid-svg-icons@next
+@fortawesome/free-brands-svg-icons
+@fortawesome/free-regular-svg-icons@next
+
+Pro:
+@fortawesome/fontawesome-pro@next
+@fortawesome/pro-solid-svg-icons@next
+@fortawesome/pro-regular-svg-icons@next
+@fortawesome/pro-light-svg-icons@next
+@fortawesome/pro-thin-svg-icons@next
+@fortawesome/pro-duotone-svg-icons@next
+
+## Credits
+
+-   [All Contributors](../../contributors)
+
+Based on Fontawesome Package by mdixon18 & PR from duckzland.
+See https://github.com/mdixon18/fontawesome
+
+-   [mdixon18](https://github.com/mdixon18/fontawesome)
+-   [duckzland](https://github.com/duckzland/fontawesome)
 
 ## License:
+
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
