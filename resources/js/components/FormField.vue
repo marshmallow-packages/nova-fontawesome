@@ -91,7 +91,7 @@
                                             filter.type == icon.prefix) &&
                                         icon.show
                                     "
-                                    class="flex items-center justify-center text-center px-2 w-1/4 cursor-pointer mb-4"
+                                    class="inner flex items-center justify-center text-center px-2 w-1/4 cursor-pointer mb-4"
                                     style="
                                         outline: 1px solid #e0e0e0;
                                         outline-offset: -0.5rem;
@@ -157,50 +157,7 @@
         }),
 
         beforeMount() {
-            let arr = {};
-            const { library } = require("@fortawesome/fontawesome-svg-core");
-            const fab = require("@fortawesome/free-brands-svg-icons").fab;
-
-            if (this.pro) {
-                const fas = require("@fortawesome/pro-solid-svg-icons").fas;
-                const far = require("@fortawesome/pro-regular-svg-icons").far;
-                const fal = require("@fortawesome/pro-light-svg-icons").fal;
-                const fad = require("@fortawesome/pro-duotone-svg-icons").fad;
-                const fat = require("@fortawesome/pro-thin-svg-icons").fat;
-                require("@fortawesome/fontawesome-pro/js/fontawesome.js");
-
-                library.add(fas, far, fab, fal, fad, fat);
-
-                arr.far = far;
-                arr.fas = fas;
-                arr.fab = fab;
-                arr.fal = fal;
-                arr.fad = fad;
-                arr.fat = fat;
-            } else {
-                const fas = require("@fortawesome/free-solid-svg-icons").fas;
-                const far = require("@fortawesome/free-regular-svg-icons").far;
-                require("@fortawesome/fontawesome-free/js/fontawesome.js");
-
-                library.add(fas, far, fab);
-
-                arr.far = far;
-                arr.fas = fas;
-                arr.fab = fab;
-            }
-
-            for (let key in arr) {
-                this.definitions.push(this.definitionToString(key));
-
-                for (let i in arr[key]) {
-                    let icon = arr[key][i];
-
-                    if (this.canShowIcon(icon)) {
-                        icon.show = true;
-                        this.icons.push(icon);
-                    }
-                }
-            }
+            console.log("BEFORE FORM");
         },
 
         mounted() {
@@ -244,6 +201,62 @@
         },
 
         methods: {
+            loadIcons() {
+                let arr = {};
+                const {
+                    library,
+                } = require("@fortawesome/fontawesome-svg-core");
+
+                if (this.pro) {
+                    const fab =
+                        require("@fortawesome/free-brands-svg-icons").fab;
+                    const fas = require("@fortawesome/pro-solid-svg-icons").fas;
+                    const far =
+                        require("@fortawesome/pro-regular-svg-icons").far;
+                    const fal = require("@fortawesome/pro-light-svg-icons").fal;
+                    const fad =
+                        require("@fortawesome/pro-duotone-svg-icons").fad;
+                    const fat = require("@fortawesome/pro-thin-svg-icons").fat;
+                    require("@fortawesome/fontawesome-pro/js/fontawesome.js");
+
+                    library.add(fas, far, fab, fal, fad, fat);
+
+                    arr.far = far;
+                    arr.fas = fas;
+                    arr.fab = fab;
+                    arr.fal = fal;
+                    arr.fad = fad;
+                    arr.fat = fat;
+                } else {
+                    const fab =
+                        require("@fortawesome/free-brands-svg-icons").fab;
+                    const fas =
+                        require("@fortawesome/free-solid-svg-icons").fas;
+                    const far =
+                        require("@fortawesome/free-regular-svg-icons").far;
+                    require("@fortawesome/fontawesome-free/js/fontawesome.js");
+
+                    library.add(fas, far, fab);
+
+                    arr.far = far;
+                    arr.fas = fas;
+                    arr.fab = fab;
+                }
+
+                for (let key in arr) {
+                    this.definitions.push(this.definitionToString(key));
+
+                    for (let i in arr[key]) {
+                        let icon = arr[key][i];
+
+                        if (this.canShowIcon(icon)) {
+                            icon.show = true;
+                            this.icons.push(icon);
+                        }
+                    }
+                }
+            },
+
             canShowIcon(icon) {
                 if (typeof this.field.only !== "undefined") {
                     if (this.field.only.indexOf(icon.iconName) === -1) {
@@ -286,6 +299,7 @@
             },
 
             toggleModal() {
+                this.loadIcons();
                 this.modalOpen = !this.modalOpen;
 
                 this.clearFilter();
@@ -355,8 +369,8 @@
                     case "Duotone":
                         return "fad";
                         break;
-                    case "fat":
-                        return "Thin";
+                    case "Thin":
+                        return "fat";
                         break;
                 }
             },
@@ -439,6 +453,11 @@
         width: 4rem;
         height: 4rem;
     }
+
+    .fontawesome-modal .inner i {
+        font-size: 3rem;
+    }
+
     .display-icon i {
         font-size: 4rem;
     }
