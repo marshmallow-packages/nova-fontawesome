@@ -1,6 +1,6 @@
 # Font Awesome Icons
 
-A Laravel Nova Font Awesome Icon field
+A Laravel Nova Font Awesome (6) Icon field
 
 ## Installation:
 
@@ -10,52 +10,38 @@ You can install the package in to a Laravel app that uses Nova via composer:
 composer require marshmallow/nova-fontawesome
 ```
 
-Then copy FontAwesome css and webfonts assets to Laravel public path where this plugin will try to access:
-
-- FontAwesome icon definition : http(s)://{fqdn}/css/all.min.css
-- FontAwesome webfonts : http(s)://{fqdn}/webfonts/{fa-icon}
-
-```bash
-    /public/css/all.min.css
-    /public/webfonts/fa-*.eot
-    /public/webfonts/fa-*.svg
-    /public/webfonts/fa-*.woff
-    /public/webfonts/fa-*.woff2
-    /public/webfonts/fa-*.ttf
-```
-
 ## Usage:
 
 Add the below to app/Nova resources.
 
 ```php
-  use Marshmallow\NovaFontAwesome\Fontawesome;
+  use Marshmallow\NovaFontAwesome\NovaFontAwesome;
 
-  Fontawesome::make('Icon')
+  NovaFontAwesome::make('Icon')
 ```
 
 You can override the text for the field button like so
 
 ```php
-  Fontawesome::make('Icon')->addButtonText('Click Me!')
+  NovaFontAwesome::make('Icon')->addButtonText('Click Me!')
 ```
 
 You can set a default icon for when an icon has not been set like so. First parameter is the type e.g. far, fas, fab and the second is the icon name (without fa-)
 
 ```php
-  Fontawesome::make('Icon')->defaultIcon('far', 'check-circle')
+  NovaFontAwesome::make('Icon')->defaultIcon('far', 'check-circle')
 ```
 
 If you want to persist the default icon (when they press clear it brings back the default so it can't be empty) then add the following:
 
 ```php
-  Fontawesome::make('Icon')->addButtonText('Click Me!')->defaultIcon('far', 'check-circle')->persistDefaultIcon()
+  NovaFontAwesome::make('Icon')->addButtonText('Click Me!')->defaultIcon('far', 'check-circle')->persistDefaultIcon()
 ```
 
 You can limit the icons the user can choose from like so
 
 ```php
-  Fontawesome::make('Icon')->only([
+  NovaFontAwesome::make('Icon')->only([
     'facebook',
     'twitch',
     'twitter',
@@ -65,7 +51,7 @@ You can limit the icons the user can choose from like so
 You can use Font Awesome Pro by doing the following (remember to get your license key!)
 
 ```php
-  Fontawesome::make('Icon')->pro()
+  NovaFontAwesome::make('Icon')->pro()
 ```
 
 ## Development
@@ -74,22 +60,22 @@ You can use Font Awesome Pro by doing the following (remember to get your licens
 FONTAWESOME_NPM_AUTH_TOKEN=YOUR_TOKEN npm install
 ```
 
-FONTAWESOME_NPM_AUTH_TOKEN=4BFC633F-983F-4250-81CE-37EB23209AE4 npm i
-
 Free:
-@fortawesome/fontawesome-free@next
-@fortawesome/fontawesome-svg-core@next
-@fortawesome/free-solid-svg-icons@next
-@fortawesome/free-brands-svg-icons
-@fortawesome/free-regular-svg-icons@next
+
+-   @fortawesome/fontawesome-free@next
+-   @fortawesome/fontawesome-svg-core@next
+-   @fortawesome/free-solid-svg-icons@next
+-   @fortawesome/free-brands-svg-icons
+-   @fortawesome/free-regular-svg-icons@next
 
 Pro:
-@fortawesome/fontawesome-pro@next
-@fortawesome/pro-solid-svg-icons@next
-@fortawesome/pro-regular-svg-icons@next
-@fortawesome/pro-light-svg-icons@next
-@fortawesome/pro-thin-svg-icons@next
-@fortawesome/pro-duotone-svg-icons@next
+
+-   @fortawesome/fontawesome-pro@next
+-   @fortawesome/pro-solid-svg-icons@next
+-   @fortawesome/pro-regular-svg-icons@next
+-   @fortawesome/pro-light-svg-icons@next
+-   @fortawesome/pro-thin-svg-icons@next
+-   @fortawesome/pro-duotone-svg-icons@next
 
 ## Credits
 
