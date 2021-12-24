@@ -7,16 +7,19 @@
 <script>
     export default {
         props: ["resourceName", "field"],
+
+        beforeMount() {},
+
+        computed: {
+            pro() {
+                return this.field.pro || false;
+            },
+        },
     };
 </script>
 
 <style>
     .fontawesome-index-icon {
         font-size: 1.5em;
-    }
-
-    .fontawesome-index-icon svg {
-        width: 1em !important;
-        height: 1.5em !important;
     }
 </style>

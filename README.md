@@ -10,6 +10,14 @@ You can install the package in to a Laravel app that uses Nova via composer:
 composer require marshmallow/nova-fontawesome
 ```
 
+Then copy FontAwesome v6 css assets to Laravel public path where this plugin will try to access:
+
+-   FontAwesome icon definition : http(s)://{fqdn}/css/all.min.css
+
+```bash
+    /public/css/fontawesome.css
+```
+
 ## Usage:
 
 Add the below to app/Nova resources.
@@ -19,6 +27,8 @@ Add the below to app/Nova resources.
 
   NovaFontAwesome::make('Icon')
 ```
+
+Add fontawesome.css to the public/css
 
 You can override the text for the field button like so
 

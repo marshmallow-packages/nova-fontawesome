@@ -9,16 +9,19 @@
 <script>
     export default {
         props: ["resource", "resourceName", "resourceId", "field"],
+
+        beforeMount() {},
+
+        computed: {
+            pro() {
+                return this.field.pro || false;
+            },
+        },
     };
 </script>
 
 <style>
     .fontawesome-index-icon {
         font-size: 1.5em;
-    }
-
-    .fontawesome-index-icon svg {
-        width: 1.5em;
-        height: 1.5em;
     }
 </style>
