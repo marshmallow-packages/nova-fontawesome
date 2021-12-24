@@ -2,10 +2,7 @@
     <default-field :field="field">
         <template slot="field">
             <div v-if="value" class="display-icon mb-4">
-                <span
-                    class="relative inline-block p-8 border"
-                    style="border-color: #e0e0e0"
-                >
+                <span class="relative inline-block p-8 border border-gray">
                     <i :class="value + ' js-icon'"></i>
 
                     <span class="close-icon" @click="clear">
@@ -29,13 +26,9 @@
                     class="fontawesome-modal"
                 >
                     <div
-                        class="bg-white rounded-lg shadow-lg border"
-                        style="border-color: #e0e0e0"
+                        class="bg-white rounded-lg shadow-lg border border-gray"
                     >
-                        <div
-                            class="px-8 py-6 border-b relative"
-                            style="border-color: #e0e0e0"
-                        >
+                        <div class="px-6 py-6 border-b relative border-gray">
                             <heading :level="2" class="mb-0">{{
                                 __("Select Icon")
                             }}</heading>
@@ -48,8 +41,8 @@
                             </a>
                         </div>
                         <div
-                            class="px-8 py-4 border-b"
-                            style="border-color: #e0e0e0; background: #fafafa"
+                            class="px-8 py-4 border-b border-gray"
+                            style="background: #fafafa"
                         >
                             <div class="flex flex-wrap -mx-4">
                                 <div class="w-1/3 px-4">
@@ -80,7 +73,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="px-8 py-6 fontawesome-inner">
+                        <div class="px-6 py-6 fontawesome-inner">
                             <div v-if="loading">Loading...</div>
                             <div
                                 class="flex flex-wrap items-stretch -mx-2"
@@ -94,11 +87,7 @@
                                             filter.type == icon.prefix) &&
                                         icon.show
                                     "
-                                    class="inner flex items-center justify-center text-center px-2 w-1/4 cursor-pointer mb-4"
-                                    style="
-                                        outline: 1px solid #e0e0e0;
-                                        outline-offset: -0.5rem;
-                                    "
+                                    class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
                                     @click="saveIcon(icon)"
                                 >
                                     <div
@@ -535,5 +524,32 @@
 
     .border-red {
         border-color: #ff123b;
+    }
+
+    .icon-box {
+        width: 12.5%;
+        outline: 1px solid #e0e0e0;
+        outline-offset: -0.5rem;
+    }
+
+    .icon-box:hover {
+        outline: 1px solid #ff123b;
+        color: #ff123b;
+    }
+
+    .border-gray {
+        border-color: #e0e0e0;
+    }
+
+    @media (min-width: 1280px) {
+        .icon-box {
+            width: 12.5%;
+        }
+    }
+
+    @media (max-width: 1279px) {
+        .icon-box {
+            width: 25%;
+        }
     }
 </style>
