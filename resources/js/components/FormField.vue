@@ -28,7 +28,10 @@
                     @close="closeModal"
                     class="fontawesome-modal"
                 >
-                    <div class="bg-white rounded-lg shadow-lg">
+                    <div
+                        class="bg-white rounded-lg shadow-lg border"
+                        style="border-color: #e0e0e0"
+                    >
                         <div
                             class="px-8 py-6 border-b relative"
                             style="border-color: #e0e0e0"
@@ -157,7 +160,7 @@
         }),
 
         beforeMount() {
-            console.log("BEFORE FORM");
+            this.loadIcons();
         },
 
         mounted() {
@@ -203,44 +206,28 @@
         methods: {
             loadIcons() {
                 let arr = {};
-                const {
-                    library,
-                } = require("@fortawesome/fontawesome-svg-core");
+
+                const fab = require("../../icons/fab.json");
+                arr.fab = fab;
 
                 if (this.pro) {
-                    const fab =
-                        require("@fortawesome/free-brands-svg-icons").fab;
-                    const fas = require("@fortawesome/pro-solid-svg-icons").fas;
-                    const far =
-                        require("@fortawesome/pro-regular-svg-icons").far;
-                    const fal = require("@fortawesome/pro-light-svg-icons").fal;
-                    const fad =
-                        require("@fortawesome/pro-duotone-svg-icons").fad;
-                    const fat = require("@fortawesome/pro-thin-svg-icons").fat;
-                    require("@fortawesome/fontawesome-pro/js/fontawesome.js");
-
-                    library.add(fas, far, fab, fal, fad, fat);
+                    const fas = require("../../icons/fas_pro.json");
+                    const far = require("../../icons/far_pro.json");
+                    const fal = require("../../icons/fal_pro.json");
+                    const fad = require("../../icons/fad_pro.json");
+                    const fat = require("../../icons/fat_pro.json");
 
                     arr.far = far;
                     arr.fas = fas;
-                    arr.fab = fab;
                     arr.fal = fal;
                     arr.fad = fad;
                     arr.fat = fat;
                 } else {
-                    const fab =
-                        require("@fortawesome/free-brands-svg-icons").fab;
-                    const fas =
-                        require("@fortawesome/free-solid-svg-icons").fas;
-                    const far =
-                        require("@fortawesome/free-regular-svg-icons").far;
-                    require("@fortawesome/fontawesome-free/js/fontawesome.js");
-
-                    library.add(fas, far, fab);
+                    const fas = require("../../icons/fas.json");
+                    const far = require("../../icons/far.json");
 
                     arr.far = far;
                     arr.fas = fas;
-                    arr.fab = fab;
                 }
 
                 for (let key in arr) {
@@ -299,7 +286,6 @@
             },
 
             toggleModal() {
-                this.loadIcons();
                 this.modalOpen = !this.modalOpen;
 
                 this.clearFilter();
@@ -449,11 +435,6 @@
 </script>
 
 <style>
-    .display-icon svg {
-        width: 4rem;
-        height: 4rem;
-    }
-
     .fontawesome-modal .inner i {
         font-size: 3rem;
     }
@@ -484,30 +465,8 @@
         opacity: 1;
     }
 
-    .close-icon svg {
-        width: 1.5rem !important;
-        height: 1.5rem !important;
-    }
-
     .close-icon i {
         font-size: 1.5rem !important;
-    }
-
-    .svg-inline--fa.fa-w-12 > path,
-    .svg-inline--fa.fa-w-14 > path,
-    .svg-inline--fa.fa-w-16 > path,
-    .svg-inline--fa.fa-w-18 > path,
-    .svg-inline--fa.fa-w-20 > path {
-        fill: #3c4655;
-    }
-
-    .svg-inline--fa.fa-w-12,
-    .svg-inline--fa.fa-w-14,
-    .svg-inline--fa.fa-w-16,
-    .svg-inline--fa.fa-w-18,
-    .svg-inline--fa.fa-w-20 {
-        width: 1.75em;
-        height: 2em;
     }
 
     .svg-inline--fa.fa-w-20 {
@@ -572,5 +531,9 @@
         margin-top: 0.5em;
         background: #fafafa;
         padding: 0.2em;
+    }
+
+    .border-red {
+        border-color: #ff123b;
     }
 </style>
