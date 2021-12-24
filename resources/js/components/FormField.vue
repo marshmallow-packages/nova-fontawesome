@@ -193,7 +193,7 @@
         },
 
         methods: {
-            loadIcons() {
+            async loadIcons() {
                 let arr = {};
 
                 const fab = require("../../icons/fab.json");
@@ -219,6 +219,7 @@
                     arr.fas = fas;
                 }
 
+                let icons = [];
                 for (let key in arr) {
                     this.definitions.push(this.definitionToString(key));
 
@@ -227,10 +228,12 @@
 
                         if (this.canShowIcon(icon)) {
                             icon.show = true;
-                            this.icons.push(icon);
+                            icons.push(icon);
                         }
                     }
                 }
+
+                this.icons = icons;
             },
 
             canShowIcon(icon) {
@@ -270,13 +273,11 @@
 
             closeModal() {
                 this.modalOpen = false;
-
                 this.clearFilter();
             },
 
             toggleModal() {
                 this.modalOpen = !this.modalOpen;
-
                 this.clearFilter();
             },
 
@@ -406,7 +407,6 @@
             "filter.search": {
                 handler(val) {
                     this.loading = true;
-
                     this.search();
                 },
             },
