@@ -1,9 +1,11 @@
 <template>
-    <panel-item :field="field">
-        <span slot="value" class="fontawesome-index-icon">
-            <i :class="field.value"></i>
-        </span>
-    </panel-item>
+    <PanelItem :index="index" :field="field">
+        <template #value>
+            <span class="fontawesome-index-icon">
+                <i :class="field.value"></i>
+            </span>
+        </template>
+    </PanelItem>
 </template>
 
 <script>
