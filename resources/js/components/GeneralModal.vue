@@ -115,13 +115,20 @@
                 search: "",
             },
         }),
-        beforeMount() {
-            this.loadIcons();
+        async beforeMount() {
+            this.isLoading = true;
+            await this.loadIcons();
         },
         mounted() {
-            this.icons.sort((a, b) =>
-                a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0
-            );
+            if (this.icons.length > 0) {
+                this.icons.sort((a, b) =>
+                    a.iconName > b.iconName
+                        ? 1
+                        : b.iconName > a.iconName
+                        ? -1
+                        : 0
+                );
+            }
 
             // Set default icon object
             if (this.defaultIcon && this.defaultIconType) {
@@ -181,6 +188,8 @@
                 this.isLoading = false;
                 this.icons = icons;
                 this.showable_icons = icons;
+                console.log(this.icons);
+                return true;
             },
             displayIcon(icon, filter) {
                 return (

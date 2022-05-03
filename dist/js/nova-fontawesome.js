@@ -2511,18 +2511,39 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     };
   },
   beforeMount: function beforeMount() {
-    this.loadIcons();
-  },
-  mounted: function mounted() {
     var _this = this;
 
-    this.icons.sort(function (a, b) {
-      return a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0;
-    }); // Set default icon object
+    return _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().mark(function _callee() {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              _this.isLoading = true;
+              _context.next = 3;
+              return _this.loadIcons();
+
+            case 3:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee);
+    }))();
+  },
+  mounted: function mounted() {
+    var _this2 = this;
+
+    if (this.icons.length > 0) {
+      console.log("huh");
+      this.icons.sort(function (a, b) {
+        return a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0;
+      });
+    } // Set default icon object
+
 
     if (this.defaultIcon && this.defaultIconType) {
       var i = this.icons.filter(function (icon) {
-        return icon.prefix === _this.defaultIconType && icon.iconName === _this.defaultIcon;
+        return icon.prefix === _this2.defaultIconType && icon.iconName === _this2.defaultIcon;
       });
 
       if (i[0]) {
@@ -2532,21 +2553,21 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
   },
   methods: {
     loadIcons: function loadIcons() {
-      var _this2 = this;
+      var _this3 = this;
 
-      return _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().mark(function _callee() {
+      return _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().mark(function _callee2() {
         var arr, fab, fas, far, fal, fad, fat, _fas, _far, icons, key, i, icon;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().wrap(function _callee$(_context) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
                 arr = {};
-                _this2.isLoading = true;
+                _this3.isLoading = true;
                 fab = __webpack_require__(/*! ../../icons/fab.json */ "./resources/icons/fab.json");
                 arr.fab = fab;
 
-                if (_this2.pro) {
+                if (_this3.pro) {
                   fas = __webpack_require__(/*! ../../icons/fas_pro.json */ "./resources/icons/fas_pro.json");
                   far = __webpack_require__(/*! ../../icons/far_pro.json */ "./resources/icons/far_pro.json");
                   fal = __webpack_require__(/*! ../../icons/fal_pro.json */ "./resources/icons/fal_pro.json");
@@ -2567,28 +2588,30 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 icons = [];
 
                 for (key in arr) {
-                  _this2.definitions.push(_this2.definitionToString(key));
+                  _this3.definitions.push(_this3.definitionToString(key));
 
                   for (i in arr[key]) {
                     icon = arr[key][i];
 
-                    if (_this2.canShowIcon(icon)) {
+                    if (_this3.canShowIcon(icon)) {
                       icon.show = true;
                       icons.push(icon);
                     }
                   }
                 }
 
-                _this2.isLoading = false;
-                _this2.icons = icons;
-                _this2.showable_icons = icons;
+                _this3.isLoading = false;
+                _this3.icons = icons;
+                _this3.showable_icons = icons;
+                console.log(_this3.icons);
+                return _context2.abrupt("return", true);
 
-              case 10:
+              case 12:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
-        }, _callee);
+        }, _callee2);
       }))();
     },
     displayIcon: function displayIcon(icon, filter) {
