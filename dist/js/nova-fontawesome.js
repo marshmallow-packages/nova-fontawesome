@@ -2534,7 +2534,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     var _this2 = this;
 
     if (this.icons.length > 0) {
-      console.log("huh");
       this.icons.sort(function (a, b) {
         return a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0;
       });
@@ -2603,10 +2602,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 _this3.isLoading = false;
                 _this3.icons = icons;
                 _this3.showable_icons = icons;
-                console.log(_this3.icons);
-                return _context2.abrupt("return", true);
+                return _context2.abrupt("return", _this3.icons);
 
-              case 12:
+              case 11:
               case "end":
                 return _context2.stop();
             }
@@ -2649,17 +2647,8 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.clearFilter();
     },
     saveIcon: function saveIcon(icon) {
-      console.log(icon); // if (this.$el.getElementsByClassName("js-icon").length > 0) {
-      //     this.$el
-      //         .getElementsByClassName("js-icon")[0]
-      //         .setAttribute(
-      //             "class",
-      //             "js-icon " + icon.prefix + " fa-" + icon.iconName
-      //         );
-      // }
-
+      console.log(icon);
       this.value = icon.prefix + " fa-" + icon.iconName;
-      console.log(this.value);
       this.filter.type = "";
       this.filter.search = "";
       this.closeModal();
@@ -2776,6 +2765,13 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     handleConfirm: function handleConfirm() {
       this.$emit("confirm");
+    },
+    onTypeChange: function onTypeChange(event) {
+      this.filter.type = event.target.value;
+      this.$nextTick(function () {
+        this.icons = this.showable_icons;
+        this.isLoading = false;
+      });
     }
   },
   computed: {
@@ -2807,8 +2803,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     },
     "filter.type": {
       handler: function handler(val) {
-        console.log(val);
-        console.log(this.filter);
         this.isLoading = true;
         this.$nextTick(function () {
           this.isLoading = false;
@@ -3002,44 +2996,43 @@ var _hoisted_4 = {
 var _hoisted_5 = {
   "class": "w-1/2 px-4"
 };
+var _hoisted_6 = ["placeholder"];
 
-var _hoisted_6 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
   value: "",
   disabled: "disabled"
 }, "Select a type", -1
 /* HOISTED */
 );
 
-var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+var _hoisted_8 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
   value: "all"
 }, "All", -1
 /* HOISTED */
 );
 
-var _hoisted_8 = ["value", "innerHTML"];
-var _hoisted_9 = {
+var _hoisted_9 = ["value", "innerHTML"];
+var _hoisted_10 = {
   "class": "w-1/2 px-4"
 };
-var _hoisted_10 = {
+var _hoisted_11 = {
   "class": "px-6 py-6 fontawesome-inner"
 };
-var _hoisted_11 = {
+var _hoisted_12 = {
   key: 0
 };
-var _hoisted_12 = {
+var _hoisted_13 = {
   key: 1,
   "class": "flex flex-wrap items-stretch -mx-2"
 };
-var _hoisted_13 = ["onClick"];
-var _hoisted_14 = ["data-class"];
-var _hoisted_15 = ["innerHTML"];
-var _hoisted_16 = {
+var _hoisted_14 = ["onClick"];
+var _hoisted_15 = ["data-class"];
+var _hoisted_16 = ["innerHTML"];
+var _hoisted_17 = {
   "class": "ml-auto"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_ModalHeader = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("ModalHeader");
-
-  var _component_SelectControl = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("SelectControl");
 
   var _component_CancelButton = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("CancelButton");
 
@@ -3053,7 +3046,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     show: true,
     onConfirm: $options.handleConfirm,
     onClose: $options.handleClose,
-    "class": "fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
+    "class": "max-w-2xl fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
   }, {
     "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
       return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_ModalHeader, {
@@ -3073,45 +3066,40 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         _: 1
         /* STABLE */
 
-      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_SelectControl, {
+      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", {
         "class": "w-full form-control form-select",
         placeholder: _ctx.__('All'),
-        modelValue: _ctx.filter.type,
         "onUpdate:modelValue": _cache[1] || (_cache[1] = function ($event) {
           return _ctx.filter.type = $event;
-        })
-      }, {
-        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-          return [_hoisted_6, _hoisted_7, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.definitions, function (def) {
-            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
-              key: def,
-              value: $options.stringToDefinition(def),
-              innerHTML: def
-            }, null, 8
-            /* PROPS */
-            , _hoisted_8);
-          }), 128
-          /* KEYED_FRAGMENT */
-          ))];
         }),
-        _: 1
-        /* STABLE */
-
-      }, 8
-      /* PROPS */
-      , ["placeholder", "modelValue"])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_9, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+        onChange: _cache[2] || (_cache[2] = function ($event) {
+          return $options.onTypeChange($event);
+        })
+      }, [_hoisted_7, _hoisted_8, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.definitions, function (def) {
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
+          key: def,
+          value: $options.stringToDefinition(def),
+          innerHTML: def
+        }, null, 8
+        /* PROPS */
+        , _hoisted_9);
+      }), 128
+      /* KEYED_FRAGMENT */
+      ))], 40
+      /* PROPS, HYDRATE_EVENTS */
+      , _hoisted_6), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelSelect, _ctx.filter.type]])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
         type: "text",
         id: "search",
         "class": "w-full form-control form-input form-input-bordered",
         placeholder: "Search icons",
-        "onUpdate:modelValue": _cache[2] || (_cache[2] = function ($event) {
+        "onUpdate:modelValue": _cache[3] || (_cache[3] = function ($event) {
           return _ctx.filter.search = $event;
         })
       }, null, 512
       /* NEED_PATCH */
-      ), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, _ctx.filter.search]])])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_11, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(_ctx.__("Loading")) + "...", 1
+      ), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, _ctx.filter.search]])])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_11, [_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_12, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(_ctx.__("Loading")) + "...", 1
       /* TEXT */
-      )) : _ctx.icons.length > 0 && !_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_12, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.showable_icons, function (icon, index) {
+      )) : _ctx.icons.length > 0 && !_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_13, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.showable_icons, function (icon, index) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
           key: index,
           "class": "inner flex items-center justify-center text-center px-2 icon-box cursor-pointer",
@@ -3130,18 +3118,18 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           innerHTML: icon.iconName
         }, null, 8
         /* PROPS */
+        , _hoisted_16)], 8
+        /* PROPS */
         , _hoisted_15)], 8
         /* PROPS */
-        , _hoisted_14)], 8
-        /* PROPS */
-        , _hoisted_13);
+        , _hoisted_14);
       }), 128
       /* KEYED_FRAGMENT */
       ))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_ModalFooter, {
         "class": "flex justify-end"
       }, {
         "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_16, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_CancelButton, {
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_17, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_CancelButton, {
             component: "button",
             type: "button",
             dusk: "cancel-action-button",

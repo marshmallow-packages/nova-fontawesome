@@ -3,7 +3,7 @@
         :show="true"
         @confirm="handleConfirm"
         @close="handleClose"
-        class="fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
+        class="max-w-2xl fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
     >
         <ModalHeader class="px-6 py-6 border-b relative border-gray">
             {{ __("Select Icon") }}
@@ -15,10 +15,11 @@
         <div class="px-2 py-4 rounded-lg bg-white">
             <div class="flex flex-wrap">
                 <div class="w-1/2 px-4">
-                    <SelectControl
+                    <select
                         class="w-full form-control form-select"
                         :placeholder="__('All')"
                         v-model="filter.type"
+                        @change="onTypeChange($event)"
                     >
                         <option value disabled="disabled">Select a type</option>
                         <option value="all">All</option>
@@ -28,7 +29,7 @@
                             :value="stringToDefinition(def)"
                             v-html="def"
                         ></option>
-                    </SelectControl>
+                    </select>
                 </div>
                 <div class="w-1/2 px-4">
                     <input
@@ -188,8 +189,8 @@
                 this.isLoading = false;
                 this.icons = icons;
                 this.showable_icons = icons;
-                console.log(this.icons);
-                return true;
+
+                return this.icons;
             },
             displayIcon(icon, filter) {
                 return (
@@ -246,18 +247,9 @@
 
             saveIcon(icon) {
                 console.log(icon);
-                // if (this.$el.getElementsByClassName("js-icon").length > 0) {
-                //     this.$el
-                //         .getElementsByClassName("js-icon")[0]
-                //         .setAttribute(
-                //             "class",
-                //             "js-icon " + icon.prefix + " fa-" + icon.iconName
-                //         );
-                // }
 
                 this.value = icon.prefix + " fa-" + icon.iconName;
 
-                console.log(this.value);
                 this.filter.type = "";
                 this.filter.search = "";
 
@@ -376,6 +368,13 @@
             handleConfirm() {
                 this.$emit("confirm");
             },
+            onTypeChange(event) {
+                this.filter.type = event.target.value;
+                this.$nextTick(function () {
+                    this.icons = this.showable_icons;
+                    this.isLoading = false;
+                });
+            },
         },
         computed: {
             pro() {
@@ -407,8 +406,6 @@
             },
             "filter.type": {
                 handler(val) {
-                    console.log(val);
-                    console.log(this.filter);
                     this.isLoading = true;
 
                     this.$nextTick(function () {
