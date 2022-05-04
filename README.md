@@ -1,6 +1,6 @@
 # Font Awesome Icons
 
-A Laravel Nova Font Awesome (6) Icon field
+A Laravel Nova 4 Field for Font Awesome 6 Icons
 
 ## Installation:
 
