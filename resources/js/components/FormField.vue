@@ -192,35 +192,13 @@
         width: 1.5em;
     }
 
-    .fontawesome-modal > div:first-child {
-        flex-basis: 0;
-        height: 100%;
-        flex-direction: column;
-    }
-
-    .fontawesome-modal > div:first-child > div {
-        position: relative;
-        max-height: 80%;
-        overflow: hidden;
-        width: 80%;
-        margin: 0 auto;
-        display: flex;
-        flex-grow: 1;
-    }
-
-    .fontawesome-modal > div:first-child > div > div {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        left: 0;
-        height: 100%;
-    }
-
     .fontawesome-inner {
-        height: 80%;
+        height: 90%;
         overflow: scroll;
+    }
+
+    .h-90p {
+        height: 90%;
     }
 
     .fontawesome-close {
@@ -268,6 +246,15 @@
     @media (max-width: 1279px) {
         .icon-box {
             width: 25%;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .icon-box {
+            width: 50%;
+        }
+        .h-90p {
+            height: 80%;
         }
     }
 </style>

@@ -3,7 +3,7 @@
         :show="true"
         @confirm="handleConfirm"
         @close="handleClose"
-        class="max-w-2xl fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
+        class="max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
     >
         <ModalHeader class="px-6 py-6 border-b relative border-gray">
             {{ __("Select Icon") }}
@@ -12,14 +12,15 @@
                 <i class="fa fa-times"></i>
             </a>
         </ModalHeader>
-        <div class="px-2 py-4 rounded-lg bg-white">
-            <div class="flex flex-wrap">
+
+        <div class="rounded-lg flex-1 relative h-90p bg-white">
+            <div class="flex px-2 py-4 flex-wrap border-b border-gray">
                 <div class="w-1/2 px-4">
-                    <select
-                        class="w-full form-control form-select"
+                    <SelectControl
+                        class="w-full"
                         :placeholder="__('All')"
-                        v-model="filter.type"
-                        @change="onTypeChange($event)"
+                        v-model:selected="filter.type"
+                        @change="filter.type = $event"
                     >
                         <option value disabled="disabled">Select a type</option>
                         <option value="all">All</option>
@@ -29,7 +30,7 @@
                             :value="stringToDefinition(def)"
                             v-html="def"
                         ></option>
-                    </select>
+                    </SelectControl>
                 </div>
                 <div class="w-1/2 px-4">
                     <input
@@ -41,14 +42,19 @@
                     />
                 </div>
             </div>
-            <div class="px-6 py-6 fontawesome-inner">
-                <div v-if="isLoading">{{ __("Loading") }}...</div>
+            <div class="px-4 py-4 fontawesome-inner">
+                <div
+                    class="py-6 text-center text-md font-semibold"
+                    v-if="isLoading"
+                >
+                    {{ __("Loading") }}...
+                </div>
                 <div
                     class="flex flex-wrap items-stretch -mx-2"
                     v-else-if="icons.length > 0 && !isLoading"
                 >
                     <div
-                        v-for="(icon, index) in showable_icons"
+                        v-for="(icon, index) in icons"
                         :key="index"
                         class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
                         @click="saveIcon(icon)"
@@ -69,6 +75,7 @@
                 </div>
             </div>
         </div>
+
         <ModalFooter class="flex justify-end">
             <div class="ml-auto">
                 <CancelButton
@@ -107,10 +114,10 @@
             modalOpen: false,
             library: {},
             icons: [],
-            showable_icons: [],
             value: "",
             definitions: [],
             defaultIconObj: {},
+            iconTypes: {},
             filter: {
                 type: "",
                 search: "",
@@ -173,6 +180,7 @@
                     arr.fas = fas;
                 }
 
+                this.icon_types = arr;
                 let icons = [];
                 for (let key in arr) {
                     this.definitions.push(this.definitionToString(key));
@@ -188,16 +196,52 @@
                 }
                 this.isLoading = false;
                 this.icons = icons;
-                this.showable_icons = icons;
 
                 return this.icons;
             },
-            displayIcon(icon, filter) {
+            async getIcons() {
+                this.isLoading = true;
+
+                let icons = [];
+                let all_types = this.icon_types;
+
+                for (let key in all_types) {
+                    let show = this.displayFilter(key);
+                    if (show) {
+                        for (let i in all_types[key]) {
+                            let icon = all_types[key][i];
+
+                            let show = this.displayIcon(icon);
+                            if (show) {
+                                icons.push(icon);
+                            }
+                        }
+                    }
+                }
+
+                this.$nextTick(function () {
+                    this.icons = icons;
+                    this.isLoading = false;
+                });
+            },
+            displayIcon(icon) {
+                let keyword = this.filter.search.toUpperCase();
+                let alt = keyword.replace("-", " ");
+                let name = icon.iconName.toUpperCase();
+                let nameAlt = name.replace("-", " ");
+
                 return (
-                    (filter.type == "" ||
-                        filter.type == "all" ||
-                        filter.type == icon.prefix) &&
-                    icon.show
+                    name.includes(keyword) ||
+                    name.indexOf(keyword) !== -1 ||
+                    nameAlt.includes(alt) ||
+                    nameAlt.indexOf(alt) !== -1
+                );
+            },
+            displayFilter(typeset) {
+                return (
+                    this.filter.type == "" ||
+                    this.filter.type == "all" ||
+                    this.filter.type == typeset
                 );
             },
             canShowIcon(icon) {
@@ -238,6 +282,7 @@
             closeModal() {
                 this.modalOpen = false;
                 this.clearFilter();
+                this.handleClose();
             },
 
             toggleModal() {
@@ -246,14 +291,19 @@
             },
 
             saveIcon(icon) {
-                console.log(icon);
+                console.log(icon, this.filter.type, this.filter.search);
 
                 this.value = icon.prefix + " fa-" + icon.iconName;
 
-                this.filter.type = "";
-                this.filter.search = "";
-
+                this.clearFilter();
                 this.closeModal();
+            },
+
+            handleClose() {
+                this.$emit("close");
+            },
+            handleConfirm() {
+                this.$emit("confirm");
             },
 
             /*
@@ -331,50 +381,6 @@
             handleChange(value) {
                 this.value = value;
             },
-
-            search() {
-                let keyword = this.filter.search.toUpperCase();
-
-                for (let i in this.icons) {
-                    if (keyword == "") {
-                        this.icons[i].show = true;
-                    } else {
-                        let alt = keyword.replace("-", " ");
-                        let name = this.icons[i].iconName.toUpperCase();
-                        let nameAlt = name.replace("-", " ");
-
-                        if (
-                            name.includes(keyword) ||
-                            name.indexOf(keyword) !== -1 ||
-                            nameAlt.includes(alt) ||
-                            nameAlt.indexOf(alt) !== -1
-                        ) {
-                            this.showable_icons[i].show = true;
-                        } else {
-                            this.showable_icons[i].show = false;
-                        }
-                    }
-                }
-
-                this.$nextTick(function () {
-                    this.icons = this.showable_icons;
-                    this.isLoading = false;
-                });
-            },
-
-            handleClose() {
-                this.$emit("close");
-            },
-            handleConfirm() {
-                this.$emit("confirm");
-            },
-            onTypeChange(event) {
-                this.filter.type = event.target.value;
-                this.$nextTick(function () {
-                    this.icons = this.showable_icons;
-                    this.isLoading = false;
-                });
-            },
         },
         computed: {
             pro() {
@@ -400,17 +406,14 @@
         watch: {
             "filter.search": {
                 handler(val) {
-                    this.isLoading = true;
-                    this.search();
+                    this.filter.search = val;
+                    this.getIcons();
                 },
             },
             "filter.type": {
                 handler(val) {
-                    this.isLoading = true;
-
-                    this.$nextTick(function () {
-                        this.isLoading = false;
-                    });
+                    this.filter.type = val;
+                    this.getIcons();
                 },
             },
         },

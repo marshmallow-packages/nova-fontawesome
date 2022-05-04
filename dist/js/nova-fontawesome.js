@@ -2500,10 +2500,10 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       modalOpen: false,
       library: {},
       icons: [],
-      showable_icons: [],
       value: "",
       definitions: [],
       defaultIconObj: {},
+      iconTypes: {},
       filter: {
         type: "",
         search: ""
@@ -2584,6 +2584,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                   arr.fas = _fas;
                 }
 
+                _this3.icon_types = arr;
                 icons = [];
 
                 for (key in arr) {
@@ -2601,7 +2602,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
                 _this3.isLoading = false;
                 _this3.icons = icons;
-                _this3.showable_icons = icons;
                 return _context2.abrupt("return", _this3.icons);
 
               case 11:
@@ -2612,8 +2612,57 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         }, _callee2);
       }))();
     },
-    displayIcon: function displayIcon(icon, filter) {
-      return (filter.type == "" || filter.type == "all" || filter.type == icon.prefix) && icon.show;
+    getIcons: function getIcons() {
+      var _this4 = this;
+
+      return _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().mark(function _callee3() {
+        var icons, all_types, key, show, i, icon, _show;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default().wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _this4.isLoading = true;
+                icons = [];
+                all_types = _this4.icon_types;
+
+                for (key in all_types) {
+                  show = _this4.displayFilter(key);
+
+                  if (show) {
+                    for (i in all_types[key]) {
+                      icon = all_types[key][i];
+                      _show = _this4.displayIcon(icon);
+
+                      if (_show) {
+                        icons.push(icon);
+                      }
+                    }
+                  }
+                }
+
+                _this4.$nextTick(function () {
+                  this.icons = icons;
+                  this.isLoading = false;
+                });
+
+              case 5:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3);
+      }))();
+    },
+    displayIcon: function displayIcon(icon) {
+      var keyword = this.filter.search.toUpperCase();
+      var alt = keyword.replace("-", " ");
+      var name = icon.iconName.toUpperCase();
+      var nameAlt = name.replace("-", " ");
+      return name.includes(keyword) || name.indexOf(keyword) !== -1 || nameAlt.includes(alt) || nameAlt.indexOf(alt) !== -1;
+    },
+    displayFilter: function displayFilter(typeset) {
+      return this.filter.type == "" || this.filter.type == "all" || this.filter.type == typeset;
     },
     canShowIcon: function canShowIcon(icon) {
       if (typeof this.field.only !== "undefined") {
@@ -2641,17 +2690,23 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     closeModal: function closeModal() {
       this.modalOpen = false;
       this.clearFilter();
+      this.handleClose();
     },
     toggleModal: function toggleModal() {
       this.modalOpen = !this.modalOpen;
       this.clearFilter();
     },
     saveIcon: function saveIcon(icon) {
-      console.log(icon);
+      console.log(icon, this.filter.type, this.filter.search);
       this.value = icon.prefix + " fa-" + icon.iconName;
-      this.filter.type = "";
-      this.filter.search = "";
+      this.clearFilter();
       this.closeModal();
+    },
+    handleClose: function handleClose() {
+      this.$emit("close");
+    },
+    handleConfirm: function handleConfirm() {
+      this.$emit("confirm");
     },
 
     /*
@@ -2735,43 +2790,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
      */
     handleChange: function handleChange(value) {
       this.value = value;
-    },
-    search: function search() {
-      var keyword = this.filter.search.toUpperCase();
-
-      for (var i in this.icons) {
-        if (keyword == "") {
-          this.icons[i].show = true;
-        } else {
-          var alt = keyword.replace("-", " ");
-          var name = this.icons[i].iconName.toUpperCase();
-          var nameAlt = name.replace("-", " ");
-
-          if (name.includes(keyword) || name.indexOf(keyword) !== -1 || nameAlt.includes(alt) || nameAlt.indexOf(alt) !== -1) {
-            this.showable_icons[i].show = true;
-          } else {
-            this.showable_icons[i].show = false;
-          }
-        }
-      }
-
-      this.$nextTick(function () {
-        this.icons = this.showable_icons;
-        this.isLoading = false;
-      });
-    },
-    handleClose: function handleClose() {
-      this.$emit("close");
-    },
-    handleConfirm: function handleConfirm() {
-      this.$emit("confirm");
-    },
-    onTypeChange: function onTypeChange(event) {
-      this.filter.type = event.target.value;
-      this.$nextTick(function () {
-        this.icons = this.showable_icons;
-        this.isLoading = false;
-      });
     }
   },
   computed: {
@@ -2797,16 +2815,14 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
   watch: {
     "filter.search": {
       handler: function handler(val) {
-        this.isLoading = true;
-        this.search();
+        this.filter.search = val;
+        this.getIcons();
       }
     },
     "filter.type": {
       handler: function handler(val) {
-        this.isLoading = true;
-        this.$nextTick(function () {
-          this.isLoading = false;
-        });
+        this.filter.type = val;
+        this.getIcons();
       }
     }
   }
@@ -2988,51 +3004,53 @@ var _hoisted_1 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementV
 
 var _hoisted_2 = [_hoisted_1];
 var _hoisted_3 = {
-  "class": "px-2 py-4 rounded-lg bg-white"
+  "class": "rounded-lg flex-1 relative h-90p bg-white"
 };
 var _hoisted_4 = {
-  "class": "flex flex-wrap"
+  "class": "flex px-2 py-4 flex-wrap border-b border-gray"
 };
 var _hoisted_5 = {
   "class": "w-1/2 px-4"
 };
-var _hoisted_6 = ["placeholder"];
 
-var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+var _hoisted_6 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
   value: "",
   disabled: "disabled"
 }, "Select a type", -1
 /* HOISTED */
 );
 
-var _hoisted_8 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
   value: "all"
 }, "All", -1
 /* HOISTED */
 );
 
-var _hoisted_9 = ["value", "innerHTML"];
-var _hoisted_10 = {
+var _hoisted_8 = ["value", "innerHTML"];
+var _hoisted_9 = {
   "class": "w-1/2 px-4"
 };
+var _hoisted_10 = {
+  "class": "px-4 py-4 fontawesome-inner"
+};
 var _hoisted_11 = {
-  "class": "px-6 py-6 fontawesome-inner"
+  key: 0,
+  "class": "py-6 text-center text-md font-semibold"
 };
 var _hoisted_12 = {
-  key: 0
-};
-var _hoisted_13 = {
   key: 1,
   "class": "flex flex-wrap items-stretch -mx-2"
 };
-var _hoisted_14 = ["onClick"];
-var _hoisted_15 = ["data-class"];
-var _hoisted_16 = ["innerHTML"];
-var _hoisted_17 = {
+var _hoisted_13 = ["onClick"];
+var _hoisted_14 = ["data-class"];
+var _hoisted_15 = ["innerHTML"];
+var _hoisted_16 = {
   "class": "ml-auto"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_ModalHeader = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("ModalHeader");
+
+  var _component_SelectControl = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("SelectControl");
 
   var _component_CancelButton = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("CancelButton");
 
@@ -3046,7 +3064,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     show: true,
     onConfirm: $options.handleConfirm,
     onClose: $options.handleClose,
-    "class": "max-w-2xl fontawesome-modal bg-white modal border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
+    "class": "max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
   }, {
     "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
       return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_ModalHeader, {
@@ -3066,28 +3084,36 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         _: 1
         /* STABLE */
 
-      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", {
-        "class": "w-full form-control form-select",
+      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_SelectControl, {
+        "class": "w-full",
         placeholder: _ctx.__('All'),
-        "onUpdate:modelValue": _cache[1] || (_cache[1] = function ($event) {
+        selected: _ctx.filter.type,
+        "onUpdate:selected": _cache[1] || (_cache[1] = function ($event) {
           return _ctx.filter.type = $event;
         }),
         onChange: _cache[2] || (_cache[2] = function ($event) {
-          return $options.onTypeChange($event);
+          return _ctx.filter.type = $event;
         })
-      }, [_hoisted_7, _hoisted_8, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.definitions, function (def) {
-        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
-          key: def,
-          value: $options.stringToDefinition(def),
-          innerHTML: def
-        }, null, 8
-        /* PROPS */
-        , _hoisted_9);
-      }), 128
-      /* KEYED_FRAGMENT */
-      ))], 40
-      /* PROPS, HYDRATE_EVENTS */
-      , _hoisted_6), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelSelect, _ctx.filter.type]])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
+          return [_hoisted_6, _hoisted_7, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.definitions, function (def) {
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
+              key: def,
+              value: $options.stringToDefinition(def),
+              innerHTML: def
+            }, null, 8
+            /* PROPS */
+            , _hoisted_8);
+          }), 128
+          /* KEYED_FRAGMENT */
+          ))];
+        }),
+        _: 1
+        /* STABLE */
+
+      }, 8
+      /* PROPS */
+      , ["placeholder", "selected"])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_9, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
         type: "text",
         id: "search",
         "class": "w-full form-control form-input form-input-bordered",
@@ -3097,9 +3123,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         })
       }, null, 512
       /* NEED_PATCH */
-      ), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, _ctx.filter.search]])])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_11, [_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_12, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(_ctx.__("Loading")) + "...", 1
+      ), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, _ctx.filter.search]])])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_11, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(_ctx.__("Loading")) + "... ", 1
       /* TEXT */
-      )) : _ctx.icons.length > 0 && !_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_13, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.showable_icons, function (icon, index) {
+      )) : _ctx.icons.length > 0 && !_ctx.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_12, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(_ctx.icons, function (icon, index) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
           key: index,
           "class": "inner flex items-center justify-center text-center px-2 icon-box cursor-pointer",
@@ -3118,18 +3144,18 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           innerHTML: icon.iconName
         }, null, 8
         /* PROPS */
-        , _hoisted_16)], 8
-        /* PROPS */
         , _hoisted_15)], 8
         /* PROPS */
-        , _hoisted_14);
+        , _hoisted_14)], 8
+        /* PROPS */
+        , _hoisted_13);
       }), 128
       /* KEYED_FRAGMENT */
       ))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_ModalFooter, {
         "class": "flex justify-end"
       }, {
         "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_17, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_CancelButton, {
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_16, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_CancelButton, {
             component: "button",
             type: "button",
             dusk: "cancel-action-button",
@@ -4321,7 +4347,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.fontawesome-modal .inner i {\n        font-size: 3rem;\n}\n.display-icon i {\n        font-size: 4rem;\n}\n.display-icon:hover .close-icon {\n        display: block;\n}\n.close-icon {\n        display: none;\n        position: absolute;\n        top: 0;\n        right: 0;\n\n        opacity: 0.75;\n        cursor: pointer;\n\n        transition: all 0.2s ease-in-out;\n\n        transform: translate(50%, -50%);\n}\n.close-icon:hover {\n        opacity: 1;\n}\n.close-icon i {\n        font-size: 1.5rem !important;\n}\n.svg-inline--fa.fa-w-20 {\n        width: 2.5em;\n}\n.svg-inline--fa.fa-w-18 {\n        width: 2.25em;\n}\n.svg-inline--fa.fa-w-16 {\n        width: 2em;\n}\n.svg-inline--fa.fa-w-12 {\n        width: 1.5em;\n}\n.fontawesome-modal > div:first-child {\n        flex-basis: 0;\n        height: 100%;\n        flex-direction: column;\n}\n.fontawesome-modal > div:first-child > div {\n        position: relative;\n        max-height: 80%;\n        overflow: hidden;\n        width: 80%;\n        margin: 0 auto;\n        display: flex;\n        flex-grow: 1;\n}\n.fontawesome-modal > div:first-child > div > div {\n        position: absolute;\n        top: 0;\n        right: 0;\n        bottom: 0;\n        width: 100%;\n        left: 0;\n        height: 100%;\n}\n.fontawesome-inner {\n        height: 80%;\n        overflow: scroll;\n}\n.fontawesome-close {\n        position: absolute;\n        top: 50%;\n        transform: translateY(-50%);\n        right: 1.5rem;\n        font-size: 1.5rem;\n        color: #3c4655;\n}\n.icon-name {\n        display: block;\n        font-size: 12px;\n        margin-top: 0.5em;\n        background: #fafafa;\n        padding: 0.2em;\n}\n.border-red {\n        border-color: #ff123b;\n}\n.icon-box {\n        width: 12.5%;\n        outline: 1px solid #e0e0e0;\n        outline-offset: -0.5rem;\n}\n.icon-box:hover {\n        outline: 1px solid #ff123b;\n        color: #ff123b;\n}\n.border-gray {\n        border-color: #e0e0e0;\n}\n@media (min-width: 1280px) {\n.icon-box {\n            width: 12.5%;\n}\n}\n@media (max-width: 1279px) {\n.icon-box {\n            width: 25%;\n}\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.fontawesome-modal .inner i {\n        font-size: 3rem;\n}\n.display-icon i {\n        font-size: 4rem;\n}\n.display-icon:hover .close-icon {\n        display: block;\n}\n.close-icon {\n        display: none;\n        position: absolute;\n        top: 0;\n        right: 0;\n\n        opacity: 0.75;\n        cursor: pointer;\n\n        transition: all 0.2s ease-in-out;\n\n        transform: translate(50%, -50%);\n}\n.close-icon:hover {\n        opacity: 1;\n}\n.close-icon i {\n        font-size: 1.5rem !important;\n}\n.svg-inline--fa.fa-w-20 {\n        width: 2.5em;\n}\n.svg-inline--fa.fa-w-18 {\n        width: 2.25em;\n}\n.svg-inline--fa.fa-w-16 {\n        width: 2em;\n}\n.svg-inline--fa.fa-w-12 {\n        width: 1.5em;\n}\n.fontawesome-inner {\n        height: 90%;\n        overflow: scroll;\n}\n.h-90p {\n        height: 90%;\n}\n.fontawesome-close {\n        position: absolute;\n        top: 50%;\n        transform: translateY(-50%);\n        right: 1.5rem;\n        font-size: 1.5rem;\n        color: #3c4655;\n}\n.icon-name {\n        display: block;\n        font-size: 12px;\n        margin-top: 0.5em;\n        background: #fafafa;\n        padding: 0.2em;\n}\n.border-red {\n        border-color: #ff123b;\n}\n.icon-box {\n        width: 12.5%;\n        outline: 1px solid #e0e0e0;\n        outline-offset: -0.5rem;\n}\n.icon-box:hover {\n        outline: 1px solid #ff123b;\n        color: #ff123b;\n}\n.border-gray {\n        border-color: #e0e0e0;\n}\n@media (min-width: 1280px) {\n.icon-box {\n            width: 12.5%;\n}\n}\n@media (max-width: 1279px) {\n.icon-box {\n            width: 25%;\n}\n}\n@media (max-width: 900px) {\n.icon-box {\n            width: 50%;\n}\n.h-90p {\n            height: 80%;\n}\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
