@@ -103,6 +103,18 @@
 
 <script>
     import { FormField, HandlesValidationErrors } from "laravel-nova";
+    import { library } from "@fortawesome/fontawesome-svg-core";
+
+    import { fab } from "@fortawesome/free-brands-svg-icons";
+
+    import { far } from "@fortawesome/free-regular-svg-icons";
+    import { fas } from "@fortawesome/free-solid-svg-icons";
+    import { far as far_pro } from "@fortawesome/pro-regular-svg-icons";
+    import { fas as fas_pro } from "@fortawesome/pro-solid-svg-icons";
+
+    import { fad } from "@fortawesome/pro-duotone-svg-icons";
+    import { fal } from "@fortawesome/pro-light-svg-icons";
+    import { fat } from "@fortawesome/pro-thin-svg-icons";
 
     export default {
         name: "GeneralModal",
@@ -157,36 +169,28 @@
                 let arr = {};
                 this.isLoading = true;
 
-                const fab = require("../../icons/fab.json");
-                arr.fab = fab;
+                library.add(fab);
 
                 if (this.pro) {
-                    const fas = require("../../icons/fas_pro.json");
-                    const far = require("../../icons/far_pro.json");
-                    const fal = require("../../icons/fal_pro.json");
-                    const fad = require("../../icons/fad_pro.json");
-                    const fat = require("../../icons/fat_pro.json");
-
-                    arr.far = far;
-                    arr.fas = fas;
-                    arr.fal = fal;
-                    arr.fad = fad;
-                    arr.fat = fat;
+                    library.add(fas_pro, far_pro, fad, fal, fat);
                 } else {
-                    const fas = require("../../icons/fas.json");
-                    const far = require("../../icons/far.json");
-
-                    arr.far = far;
-                    arr.fas = fas;
+                    library.add(fas, far);
                 }
+
+                arr = library.definitions;
 
                 this.icon_types = arr;
                 let icons = [];
                 for (let key in arr) {
                     this.definitions.push(this.definitionToString(key));
-
                     for (let i in arr[key]) {
-                        let icon = arr[key][i];
+                        let iconName = i;
+                        let iconData = arr[key][i];
+                        let icon = {
+                            prefix: key,
+                            iconName: iconName,
+                            iconData: iconData,
+                        };
 
                         if (this.canShowIcon(icon)) {
                             icon.show = true;
@@ -209,7 +213,13 @@
                     let show = this.displayFilter(key);
                     if (show) {
                         for (let i in all_types[key]) {
-                            let icon = all_types[key][i];
+                            let iconName = i;
+                            let iconData = all_types[key][i];
+                            let icon = {
+                                prefix: key,
+                                iconName: iconName,
+                                iconData: iconData,
+                            };
 
                             let show = this.displayIcon(icon);
                             if (show) {
@@ -225,6 +235,9 @@
                 });
             },
             displayIcon(icon) {
+                if (this.filter.search === "") {
+                    return true;
+                }
                 let keyword = this.filter.search.toUpperCase();
                 let alt = keyword.replace("-", " ");
                 let name = icon.iconName.toUpperCase();
@@ -321,21 +334,27 @@
             definitionToString(def) {
                 switch (def) {
                     case "far":
+                    case "fa-regular":
                         return "Regular";
                         break;
                     case "fas":
+                    case "fa-solid":
                         return "Solid";
                         break;
                     case "fab":
+                    case "fa-brands":
                         return "Brands";
                         break;
                     case "fal":
+                    case "fa-light":
                         return "Light";
                         break;
                     case "fad":
+                    case "fa-duotone":
                         return "Duotone";
                         break;
                     case "fat":
+                    case "fa-thin":
                         return "Thin";
                         break;
                 }

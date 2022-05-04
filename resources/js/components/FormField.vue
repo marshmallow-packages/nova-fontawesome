@@ -100,7 +100,6 @@
                 this.modalOpen = true;
             },
             confirmModal(iconData) {
-                console.log(iconData);
                 this.value = iconData;
                 this.modalOpen = false;
             },
@@ -124,7 +123,6 @@
                     this.saveIcon(this.defaultIconObj);
                 } else {
                     this.value = "";
-                    console.log(this.value);
                 }
             },
             /**
