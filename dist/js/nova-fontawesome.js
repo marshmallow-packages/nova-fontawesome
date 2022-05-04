@@ -2403,7 +2403,11 @@ __webpack_require__.r(__webpack_exports__);
       return this.field.enforce_default_icon || false;
     },
     defaultIconOutput: function defaultIconOutput() {
-      return this.defaultIconType + " fa-" + this.defaultIcon;
+      if (this.defaultIcon) {
+        return this.defaultIconType + " fa-" + this.defaultIcon;
+      } else {
+        return "";
+      }
     }
   },
   mounted: function mounted() {
@@ -2427,7 +2431,9 @@ __webpack_require__.r(__webpack_exports__);
     openModal: function openModal() {
       this.modalOpen = true;
     },
-    confirmModal: function confirmModal() {
+    confirmModal: function confirmModal(iconData) {
+      console.log(iconData);
+      this.value = iconData;
       this.modalOpen = false;
     },
     closeModal: function closeModal() {
@@ -2446,9 +2452,8 @@ __webpack_require__.r(__webpack_exports__);
         this.saveIcon(this.defaultIconObj);
       } else {
         this.value = "";
+        console.log(this.value);
       }
-
-      this.clearFilter();
     },
 
     /**
@@ -2697,16 +2702,25 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       this.clearFilter();
     },
     saveIcon: function saveIcon(icon) {
-      console.log(icon, this.filter.type, this.filter.search);
-      this.value = icon.prefix + " fa-" + icon.iconName;
+      var fa6_prefixes = {
+        fas: "fa-solid",
+        far: "fa-regular",
+        fal: "fa-light",
+        fat: "fa-thin",
+        fab: "fa-brands",
+        fad: "fa-duotone"
+      };
+      var old_prefix = icon.prefix;
+      var fa6_prefix = fa6_prefixes[old_prefix];
+      this.value = fa6_prefix + " fa-" + icon.iconName;
       this.clearFilter();
-      this.closeModal();
+      this.handleConfirm();
     },
     handleClose: function handleClose() {
       this.$emit("close");
     },
     handleConfirm: function handleConfirm() {
-      this.$emit("confirm");
+      this.$emit("confirm", this.value);
     },
 
     /*
@@ -4347,7 +4361,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.fontawesome-modal .inner i {\n        font-size: 3rem;\n}\n.display-icon i {\n        font-size: 4rem;\n}\n.display-icon:hover .close-icon {\n        display: block;\n}\n.close-icon {\n        display: none;\n        position: absolute;\n        top: 0;\n        right: 0;\n\n        opacity: 0.75;\n        cursor: pointer;\n\n        transition: all 0.2s ease-in-out;\n\n        transform: translate(50%, -50%);\n}\n.close-icon:hover {\n        opacity: 1;\n}\n.close-icon i {\n        font-size: 1.5rem !important;\n}\n.svg-inline--fa.fa-w-20 {\n        width: 2.5em;\n}\n.svg-inline--fa.fa-w-18 {\n        width: 2.25em;\n}\n.svg-inline--fa.fa-w-16 {\n        width: 2em;\n}\n.svg-inline--fa.fa-w-12 {\n        width: 1.5em;\n}\n.fontawesome-inner {\n        height: 90%;\n        overflow: scroll;\n}\n.h-90p {\n        height: 90%;\n}\n.fontawesome-close {\n        position: absolute;\n        top: 50%;\n        transform: translateY(-50%);\n        right: 1.5rem;\n        font-size: 1.5rem;\n        color: #3c4655;\n}\n.icon-name {\n        display: block;\n        font-size: 12px;\n        margin-top: 0.5em;\n        background: #fafafa;\n        padding: 0.2em;\n}\n.border-red {\n        border-color: #ff123b;\n}\n.icon-box {\n        width: 12.5%;\n        outline: 1px solid #e0e0e0;\n        outline-offset: -0.5rem;\n}\n.icon-box:hover {\n        outline: 1px solid #ff123b;\n        color: #ff123b;\n}\n.border-gray {\n        border-color: #e0e0e0;\n}\n@media (min-width: 1280px) {\n.icon-box {\n            width: 12.5%;\n}\n}\n@media (max-width: 1279px) {\n.icon-box {\n            width: 25%;\n}\n}\n@media (max-width: 900px) {\n.icon-box {\n            width: 50%;\n}\n.h-90p {\n            height: 80%;\n}\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.fontawesome-modal .inner i {\n        font-size: 3rem;\n}\n.display-icon i {\n        font-size: 4rem;\n}\n.display-icon:hover .close-icon {\n        display: block;\n}\n.close-icon {\n        display: none;\n        position: absolute;\n        top: 0;\n        right: 0;\n\n        opacity: 0.75;\n        cursor: pointer;\n\n        transition: all 0.2s ease-in-out;\n\n        transform: translate(50%, -50%);\n}\n.close-icon:hover {\n        opacity: 1;\n}\n.close-icon i {\n        font-size: 1.5rem !important;\n}\n.svg-inline--fa.fa-w-20 {\n        width: 2.5em;\n}\n.svg-inline--fa.fa-w-18 {\n        width: 2.25em;\n}\n.svg-inline--fa.fa-w-16 {\n        width: 2em;\n}\n.svg-inline--fa.fa-w-12 {\n        width: 1.5em;\n}\n.fontawesome-inner {\n        height: 90%;\n        overflow: scroll;\n}\n.h-90p {\n        height: 90%;\n}\n.fontawesome-close {\n        position: absolute;\n        top: 50%;\n        transform: translateY(-50%);\n        right: 1.5rem;\n        font-size: 1.5rem;\n        color: #3c4655;\n}\n.icon-name {\n        display: block;\n        font-size: 12px;\n        margin-top: 0.5em;\n        background: #fafafa;\n        padding: 0.2em;\n}\n.border-red {\n        border-color: #ff123b;\n}\n.icon-box {\n        width: 25%;\n        outline: 1px solid #e0e0e0;\n        outline-offset: -0.5rem;\n}\n.icon-box:hover {\n        outline: 1px solid #ff123b;\n        color: #ff123b;\n}\n.border-gray {\n        border-color: #e0e0e0;\n}\n@media (max-width: 1279px) {\n.icon-box {\n            width: 25%;\n}\n}\n@media (max-width: 900px) {\n.icon-box {\n            width: 50%;\n}\n.h-90p {\n            height: 80%;\n}\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

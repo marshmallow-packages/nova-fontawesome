@@ -291,19 +291,28 @@
             },
 
             saveIcon(icon) {
-                console.log(icon, this.filter.type, this.filter.search);
+                let fa6_prefixes = {
+                    fas: "fa-solid",
+                    far: "fa-regular",
+                    fal: "fa-light",
+                    fat: "fa-thin",
+                    fab: "fa-brands",
+                    fad: "fa-duotone",
+                };
+                let old_prefix = icon.prefix;
+                let fa6_prefix = fa6_prefixes[old_prefix];
 
-                this.value = icon.prefix + " fa-" + icon.iconName;
+                this.value = fa6_prefix + " fa-" + icon.iconName;
 
                 this.clearFilter();
-                this.closeModal();
+                this.handleConfirm();
             },
 
             handleClose() {
                 this.$emit("close");
             },
             handleConfirm() {
-                this.$emit("confirm");
+                this.$emit("confirm", this.value);
             },
 
             /*

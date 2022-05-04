@@ -70,7 +70,11 @@
                 return this.field.enforce_default_icon || false;
             },
             defaultIconOutput() {
-                return this.defaultIconType + " fa-" + this.defaultIcon;
+                if (this.defaultIcon) {
+                    return this.defaultIconType + " fa-" + this.defaultIcon;
+                } else {
+                    return "";
+                }
             },
         },
         mounted() {
@@ -95,7 +99,9 @@
             openModal() {
                 this.modalOpen = true;
             },
-            confirmModal() {
+            confirmModal(iconData) {
+                console.log(iconData);
+                this.value = iconData;
                 this.modalOpen = false;
             },
             closeModal() {
@@ -118,9 +124,8 @@
                     this.saveIcon(this.defaultIconObj);
                 } else {
                     this.value = "";
+                    console.log(this.value);
                 }
-
-                this.clearFilter();
             },
             /**
              * Fill the given FormData object with the field's internal value.
@@ -223,7 +228,7 @@
     }
 
     .icon-box {
-        width: 12.5%;
+        width: 25%;
         outline: 1px solid #e0e0e0;
         outline-offset: -0.5rem;
     }
@@ -235,12 +240,6 @@
 
     .border-gray {
         border-color: #e0e0e0;
-    }
-
-    @media (min-width: 1280px) {
-        .icon-box {
-            width: 12.5%;
-        }
     }
 
     @media (max-width: 1279px) {
