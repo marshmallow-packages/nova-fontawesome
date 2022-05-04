@@ -1,9 +1,11 @@
 {
     "name": "marshmallow/nova-fontawesome",
-    "description": "A Font Awesome Nova field.",
+    "description": "A Font Awesome 6 Field for Laravel Nova 4",
     "keywords": [
         "laravel",
         "nova",
+        "nova 4",
+        "fontawesome 6",
         "fontawesome"
     ],
     "license": "MIT",
