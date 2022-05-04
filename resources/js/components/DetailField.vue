@@ -1,5 +1,5 @@
 <template>
-    <PanelItem :index="index" :field="field">
+    <PanelItem :field="field">
         <template #value>
             <span class="fontawesome-index-icon">
                 <i :class="field.value"></i>
