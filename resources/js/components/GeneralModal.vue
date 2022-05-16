@@ -22,8 +22,12 @@
                         v-model:selected="filter.type"
                         @change="filter.type = $event"
                     >
-                        <option value disabled="disabled">Select a type</option>
-                        <option value="all">All</option>
+                        <option value disabled="disabled">
+                            {{ __("Select a type") }}
+                        </option>
+                        <option value="all">
+                            {{ __("All") }}
+                        </option>
                         <option
                             v-for="def in definitions"
                             :key="def"
@@ -37,7 +41,7 @@
                         type="text"
                         id="search"
                         class="w-full form-control form-input form-input-bordered"
-                        placeholder="Search icons"
+                        placeholder="{{ __('Search icons') }}"
                         v-model="filter.search"
                     />
                 </div>
