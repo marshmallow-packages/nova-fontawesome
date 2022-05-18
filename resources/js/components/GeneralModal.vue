@@ -6,7 +6,7 @@
         class="max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
     >
         <ModalHeader class="px-6 py-6 border-b relative border-gray">
-            {{ __("Select Icon") }}
+            {{ __("novaFontawesome.modalTitle") }}
 
             <a href="#" class="fontawesome-close" @click.prevent="handleClose">
                 <i class="fa fa-times"></i>
@@ -23,10 +23,10 @@
                         @change="filter.type = $event"
                     >
                         <option value disabled="disabled">
-                            {{ __("Select a type") }}
+                            {{ __("novaFontawesome.selectType.default") }}
                         </option>
                         <option value="all">
-                            {{ __("All") }}
+                            {{ __("novaFontawesome.selectType.placeholder") }}
                         </option>
                         <option
                             v-for="def in definitions"
@@ -41,7 +41,7 @@
                         type="text"
                         id="search"
                         class="w-full form-control form-input form-input-bordered"
-                        placeholder="{{ __('Search icons') }}"
+                        :placeholder="__('novaFontawesome.search.placeholder')"
                         v-model="filter.search"
                     />
                 </div>
@@ -51,7 +51,7 @@
                     class="py-6 text-center text-md font-semibold"
                     v-if="isLoading"
                 >
-                    {{ __("Loading") }}...
+                    {{ __("novaFontawesome.loading") }}...
                 </div>
                 <div
                     class="flex flex-wrap items-stretch -mx-2"
@@ -87,7 +87,9 @@
                     type="button"
                     dusk="cancel-action-button"
                     @click.prevent="handleClose"
-                />
+                >
+                    {{ __("novaFontawesome.cancel") }}
+                </CancelButton>
 
                 <LoadingButton
                     class="ml-3"
@@ -98,7 +100,7 @@
                     :loading="isLoading"
                     @click="handleConfirm"
                 >
-                    {{ __("Save") }}
+                    {{ __("novaFontawesome.save") }}
                 </LoadingButton>
             </div>
         </ModalFooter>
@@ -339,27 +341,27 @@
                 switch (def) {
                     case "far":
                     case "fa-regular":
-                        return "Regular";
+                        return this.__("novaFontawesome.types.regular");
                         break;
                     case "fas":
                     case "fa-solid":
-                        return "Solid";
+                        return this.__("novaFontawesome.types.solid");
                         break;
                     case "fab":
                     case "fa-brands":
-                        return "Brands";
+                        return this.__("novaFontawesome.types.brands");
                         break;
                     case "fal":
                     case "fa-light":
-                        return "Light";
+                        return this.__("novaFontawesome.types.light");
                         break;
                     case "fad":
                     case "fa-duotone":
-                        return "Duotone";
+                        return this.__("novaFontawesome.types.duotone");
                         break;
                     case "fat":
                     case "fa-thin":
-                        return "Thin";
+                        return this.__("novaFontawesome.types.thin");
                         break;
                 }
             },
@@ -369,22 +371,22 @@
              */
             stringToDefinition(str) {
                 switch (str) {
-                    case "Regular":
+                    case this.__("novaFontawesome.types.regular"):
                         return "far";
                         break;
-                    case "Solid":
+                    case this.__("novaFontawesome.types.solid"):
                         return "fas";
                         break;
-                    case "Brands":
+                    case this.__("novaFontawesome.types.brands"):
                         return "fab";
                         break;
-                    case "Light":
+                    case this.__("novaFontawesome.types.light"):
                         return "fal";
                         break;
-                    case "Duotone":
+                    case this.__("novaFontawesome.types.duotone"):
                         return "fad";
                         break;
-                    case "Thin":
+                    case this.__("novaFontawesome.types.thin"):
                         return "fat";
                         break;
                 }
@@ -425,7 +427,10 @@
                 return this.field.default_icon_type || "";
             },
             addButtonText() {
-                return this.field.add_button_text || "Add Icon";
+                return (
+                    this.field.add_button_text ||
+                    this.__("novaFontawesome.addIcon")
+                );
             },
             enforceDefaultIcon() {
                 return this.field.enforce_default_icon || false;
