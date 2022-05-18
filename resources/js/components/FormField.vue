@@ -223,7 +223,7 @@
     }
 
     .border-red {
-        border-color: #ff123b;
+        border-color: rgba(var(--colors-primary-500));
     }
 
     .icon-box {
@@ -233,8 +233,8 @@
     }
 
     .icon-box:hover {
-        outline: 1px solid #ff123b;
-        color: #ff123b;
+        outline: 1px solid rgba(var(--colors-primary-500));
+        color: rgba(var(--colors-primary-500));
     }
 
     .border-gray {
