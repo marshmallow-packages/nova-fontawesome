@@ -46,7 +46,11 @@
                     />
                 </div>
             </div>
-            <div class="px-4 py-4 fontawesome-inner">
+            <div
+                class="px-4 py-4 fontawesome-inner"
+                @scroll="onScroll"
+                id="iconContainer"
+            >
                 <div
                     class="py-6 text-center text-md font-semibold"
                     v-if="isLoading"
@@ -58,7 +62,7 @@
                     v-else-if="icons.length > 0 && !isLoading"
                 >
                     <div
-                        v-for="(icon, index) in icons"
+                        v-for="(icon, index) in chunkedIcons"
                         :key="index"
                         class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
                         @click="saveIcon(icon)"
@@ -132,11 +136,19 @@
             modalOpen: false,
             library: {},
             icons: [],
+            iconsChunked: [],
+            expanded: false,
+            chunk: 0,
             value: "",
             definitions: [],
             defaultIconObj: {},
             iconTypes: {},
+            iconContainer: null,
             filter: {
+                type: "",
+                search: "",
+            },
+            old_filter: {
                 type: "",
                 search: "",
             },
@@ -146,6 +158,9 @@
             await this.loadIcons();
         },
         mounted() {
+            this.filter.type = "all";
+            this.old_filter.type = "all";
+
             if (this.icons.length > 0) {
                 this.icons.sort((a, b) =>
                     a.iconName > b.iconName
@@ -212,6 +227,9 @@
             async getIcons() {
                 this.isLoading = true;
 
+                this.chunk = 0;
+                this.iconsChunked = [];
+
                 let icons = [];
                 let all_types = this.icon_types;
 
@@ -238,7 +256,44 @@
                 this.$nextTick(function () {
                     this.icons = icons;
                     this.isLoading = false;
+                    this.getChunk();
                 });
+
+                this.iconContainer = document.querySelector("#iconContainer");
+            },
+
+            onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
+                if (
+                    scrollTop + clientHeight >= scrollHeight - 250 &&
+                    this.expanded === false
+                ) {
+                    this.expanded = true;
+                    this.getChunk();
+                }
+            },
+            getChunk() {
+                let chunkSize = 100;
+
+                let sortedIcons = this.icons.sort((a, b) => {
+                    let fa = a.iconName.toLowerCase(),
+                        fb = b.iconName.toLowerCase();
+                    if (fa < fb) {
+                        return -1;
+                    }
+                    if (fa > fb) {
+                        return 1;
+                    }
+                    return 0;
+                });
+
+                let nextChunk = this.icons.slice(
+                    this.chunk,
+                    this.chunk + chunkSize
+                );
+                this.iconsChunked = [...this.iconsChunked, ...nextChunk];
+
+                this.expanded = false;
+                this.chunk += chunkSize;
             },
             displayIcon(icon) {
                 if (this.filter.search === "") {
@@ -294,6 +349,9 @@
             },
 
             clearFilter() {
+                this.chunk = 0;
+                this.iconsChunked = [];
+                this.iconContainer.scrollTop = 0;
                 this.filter.type = "";
                 this.filter.search = "";
             },
@@ -438,18 +496,29 @@
             defaultIconOutput() {
                 return this.defaultIconType + " fa-" + this.defaultIcon;
             },
+            chunkedIcons() {
+                return this.iconsChunked;
+            },
         },
 
         watch: {
             "filter.search": {
                 handler(val) {
                     this.filter.search = val;
+                    this.chunk = 0;
+                    this.iconsChunked = [];
                     this.getIcons();
                 },
             },
             "filter.type": {
                 handler(val) {
+                    if (this.old_filter.type !== val) {
+                        this.clearFilter();
+                    }
                     this.filter.type = val;
+                    this.chunk = 0;
+                    this.iconsChunked = [];
+                    this.old_filter.type = this.filter.type;
                     this.getIcons();
                 },
             },
