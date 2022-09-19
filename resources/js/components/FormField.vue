@@ -19,7 +19,7 @@
                     :placeholder="field.name"
                     v-model="value"
                 />
-                <DefaultButton @click.prevent="openModal">
+                <DefaultButton type="button" @click.prevent="openModal">
                     {{ addButtonText }}
                 </DefaultButton>
 
