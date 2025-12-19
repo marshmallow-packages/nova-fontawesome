@@ -7,6 +7,8 @@
     "novaFontawesome.loading": "Laden",
     "novaFontawesome.save": "Opslaan",
     "novaFontawesome.cancel": "Annuleren",
+    "novaFontawesome.noResults": "Geen iconen gevonden",
+    "novaFontawesome.searchPrompt": "Typ minimaal 2 karakters om te zoeken",
     "novaFontawesome.types.regular": "Normaal",
     "novaFontawesome.types.solid": "Dikgedrukt",
     "novaFontawesome.types.brands": "Merken",

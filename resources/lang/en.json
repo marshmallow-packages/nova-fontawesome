@@ -7,6 +7,8 @@
     "novaFontawesome.loading": "Loading",
     "novaFontawesome.save": "Save",
     "novaFontawesome.cancel": "Cancel",
+    "novaFontawesome.noResults": "No icons found",
+    "novaFontawesome.searchPrompt": "Type at least 2 characters to search",
     "novaFontawesome.types.regular": "Regular",
     "novaFontawesome.types.solid": "Solid",
     "novaFontawesome.types.brands": "Brands",
