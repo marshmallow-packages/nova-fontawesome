@@ -19,11 +19,9 @@
                     :placeholder="field.name"
                     v-model="value"
                 />
-                <button
-                    class="flex-shrink-0 shadow rounded focus:outline-none focus:ring bg-primary-500 hover:bg-primary-400 active:bg-primary-600 text-white dark:text-gray-800 inline-flex items-center font-bold px-4 h-9 text-sm flex-shrink-0"
-                    @click.prevent="openModal"
-                    v-text="addButtonText"
-                ></button>
+                <DefaultButton type="button" @click.prevent="openModal">
+                    {{ addButtonText }}
+                </DefaultButton>
 
                 <GeneralModal
                     class="fontawesome-modal max-w-3xl"
@@ -64,7 +62,10 @@
                 return this.field.default_icon_type || "";
             },
             addButtonText() {
-                return this.field.add_button_text || "Add Icon";
+                return (
+                    this.field.add_button_text ||
+                    this.__("novaFontawesome.addIcon")
+                );
             },
             enforceDefaultIcon() {
                 return this.field.enforce_default_icon || false;
@@ -222,7 +223,7 @@
     }
 
     .border-red {
-        border-color: #ff123b;
+        border-color: rgba(var(--colors-primary-500));
     }
 
     .icon-box {
@@ -232,8 +233,8 @@
     }
 
     .icon-box:hover {
-        outline: 1px solid #ff123b;
-        color: #ff123b;
+        outline: 1px solid rgba(var(--colors-primary-500));
+        color: rgba(var(--colors-primary-500));
     }
 
     .border-gray {

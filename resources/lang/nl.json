@@ -1,0 +1,16 @@
+{
+    "novaFontawesome.addIcon": "Icoon toevoegen",
+    "novaFontawesome.modalTitle": "Selecteer Icoon",
+    "novaFontawesome.selectType.placeholder": "Alles",
+    "novaFontawesome.selectType.default": "Selecteer een type",
+    "novaFontawesome.search.placeholder": "Zoek iconen",
+    "novaFontawesome.loading": "Laden",
+    "novaFontawesome.save": "Opslaan",
+    "novaFontawesome.cancel": "Annuleren",
+    "novaFontawesome.types.regular": "Normaal",
+    "novaFontawesome.types.solid": "Dikgedrukt",
+    "novaFontawesome.types.brands": "Merken",
+    "novaFontawesome.types.light": "Licht",
+    "novaFontawesome.types.duotone": "Duotone",
+    "novaFontawesome.types.thin": "Dun"
+}

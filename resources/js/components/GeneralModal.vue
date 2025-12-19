@@ -6,7 +6,7 @@
         class="max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
     >
         <ModalHeader class="px-6 py-6 border-b relative border-gray">
-            {{ __("Select Icon") }}
+            {{ __("novaFontawesome.modalTitle") }}
 
             <a href="#" class="fontawesome-close" @click.prevent="handleClose">
                 <i class="fa fa-times"></i>
@@ -22,8 +22,12 @@
                         v-model:selected="filter.type"
                         @change="filter.type = $event"
                     >
-                        <option value disabled="disabled">Select a type</option>
-                        <option value="all">All</option>
+                        <option value disabled="disabled">
+                            {{ __("novaFontawesome.selectType.default") }}
+                        </option>
+                        <option value="all">
+                            {{ __("novaFontawesome.selectType.placeholder") }}
+                        </option>
                         <option
                             v-for="def in definitions"
                             :key="def"
@@ -37,24 +41,28 @@
                         type="text"
                         id="search"
                         class="w-full form-control form-input form-input-bordered"
-                        placeholder="Search icons"
+                        :placeholder="__('novaFontawesome.search.placeholder')"
                         v-model="filter.search"
                     />
                 </div>
             </div>
-            <div class="px-4 py-4 fontawesome-inner">
+            <div
+                class="px-4 py-4 fontawesome-inner"
+                @scroll="onScroll"
+                id="iconContainer"
+            >
                 <div
                     class="py-6 text-center text-md font-semibold"
                     v-if="isLoading"
                 >
-                    {{ __("Loading") }}...
+                    {{ __("novaFontawesome.loading") }}...
                 </div>
                 <div
                     class="flex flex-wrap items-stretch -mx-2"
                     v-else-if="icons.length > 0 && !isLoading"
                 >
                     <div
-                        v-for="(icon, index) in icons"
+                        v-for="(icon, index) in chunkedIcons"
                         :key="index"
                         class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
                         @click="saveIcon(icon)"
@@ -83,7 +91,9 @@
                     type="button"
                     dusk="cancel-action-button"
                     @click.prevent="handleClose"
-                />
+                >
+                    {{ __("novaFontawesome.cancel") }}
+                </CancelButton>
 
                 <LoadingButton
                     class="ml-3"
@@ -94,7 +104,7 @@
                     :loading="isLoading"
                     @click="handleConfirm"
                 >
-                    {{ __("Save") }}
+                    {{ __("novaFontawesome.save") }}
                 </LoadingButton>
             </div>
         </ModalFooter>
@@ -103,10 +113,9 @@
 
 <script>
     import { FormField, HandlesValidationErrors } from "laravel-nova";
+
     import { library } from "@fortawesome/fontawesome-svg-core";
-
     import { fab } from "@fortawesome/free-brands-svg-icons";
-
     import { far } from "@fortawesome/free-regular-svg-icons";
     import { fas } from "@fortawesome/free-solid-svg-icons";
     import { far as far_pro } from "@fortawesome/pro-regular-svg-icons";
@@ -126,11 +135,19 @@
             modalOpen: false,
             library: {},
             icons: [],
+            iconsChunked: [],
+            expanded: false,
+            chunk: 0,
             value: "",
             definitions: [],
             defaultIconObj: {},
             iconTypes: {},
+            iconContainer: null,
             filter: {
+                type: "",
+                search: "",
+            },
+            old_filter: {
                 type: "",
                 search: "",
             },
@@ -140,6 +157,9 @@
             await this.loadIcons();
         },
         mounted() {
+            this.filter.type = "all";
+            this.old_filter.type = "all";
+
             if (this.icons.length > 0) {
                 this.icons.sort((a, b) =>
                     a.iconName > b.iconName
@@ -206,6 +226,9 @@
             async getIcons() {
                 this.isLoading = true;
 
+                this.chunk = 0;
+                this.iconsChunked = [];
+
                 let icons = [];
                 let all_types = this.icon_types;
 
@@ -232,7 +255,44 @@
                 this.$nextTick(function () {
                     this.icons = icons;
                     this.isLoading = false;
+                    this.getChunk();
                 });
+
+                this.iconContainer = document.querySelector("#iconContainer");
+            },
+
+            onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
+                if (
+                    scrollTop + clientHeight >= scrollHeight - 250 &&
+                    this.expanded === false
+                ) {
+                    this.expanded = true;
+                    this.getChunk();
+                }
+            },
+            getChunk() {
+                let chunkSize = 100;
+
+                let sortedIcons = this.icons.sort((a, b) => {
+                    let fa = a.iconName.toLowerCase(),
+                        fb = b.iconName.toLowerCase();
+                    if (fa < fb) {
+                        return -1;
+                    }
+                    if (fa > fb) {
+                        return 1;
+                    }
+                    return 0;
+                });
+
+                let nextChunk = this.icons.slice(
+                    this.chunk,
+                    this.chunk + chunkSize
+                );
+                this.iconsChunked = [...this.iconsChunked, ...nextChunk];
+
+                this.expanded = false;
+                this.chunk += chunkSize;
             },
             displayIcon(icon) {
                 if (this.filter.search === "") {
@@ -288,6 +348,9 @@
             },
 
             clearFilter() {
+                this.chunk = 0;
+                this.iconsChunked = [];
+                this.iconContainer.scrollTop = 0;
                 this.filter.type = "";
                 this.filter.search = "";
             },
@@ -335,27 +398,27 @@
                 switch (def) {
                     case "far":
                     case "fa-regular":
-                        return "Regular";
+                        return this.__("novaFontawesome.types.regular");
                         break;
                     case "fas":
                     case "fa-solid":
-                        return "Solid";
+                        return this.__("novaFontawesome.types.solid");
                         break;
                     case "fab":
                     case "fa-brands":
-                        return "Brands";
+                        return this.__("novaFontawesome.types.brands");
                         break;
                     case "fal":
                     case "fa-light":
-                        return "Light";
+                        return this.__("novaFontawesome.types.light");
                         break;
                     case "fad":
                     case "fa-duotone":
-                        return "Duotone";
+                        return this.__("novaFontawesome.types.duotone");
                         break;
                     case "fat":
                     case "fa-thin":
-                        return "Thin";
+                        return this.__("novaFontawesome.types.thin");
                         break;
                 }
             },
@@ -365,22 +428,22 @@
              */
             stringToDefinition(str) {
                 switch (str) {
-                    case "Regular":
+                    case this.__("novaFontawesome.types.regular"):
                         return "far";
                         break;
-                    case "Solid":
+                    case this.__("novaFontawesome.types.solid"):
                         return "fas";
                         break;
-                    case "Brands":
+                    case this.__("novaFontawesome.types.brands"):
                         return "fab";
                         break;
-                    case "Light":
+                    case this.__("novaFontawesome.types.light"):
                         return "fal";
                         break;
-                    case "Duotone":
+                    case this.__("novaFontawesome.types.duotone"):
                         return "fad";
                         break;
-                    case "Thin":
+                    case this.__("novaFontawesome.types.thin"):
                         return "fat";
                         break;
                 }
@@ -421,7 +484,10 @@
                 return this.field.default_icon_type || "";
             },
             addButtonText() {
-                return this.field.add_button_text || "Add Icon";
+                return (
+                    this.field.add_button_text ||
+                    this.__("novaFontawesome.addIcon")
+                );
             },
             enforceDefaultIcon() {
                 return this.field.enforce_default_icon || false;
@@ -429,18 +495,29 @@
             defaultIconOutput() {
                 return this.defaultIconType + " fa-" + this.defaultIcon;
             },
+            chunkedIcons() {
+                return this.iconsChunked;
+            },
         },
 
         watch: {
             "filter.search": {
                 handler(val) {
                     this.filter.search = val;
+                    this.chunk = 0;
+                    this.iconsChunked = [];
                     this.getIcons();
                 },
             },
             "filter.type": {
                 handler(val) {
+                    if (this.old_filter.type !== val) {
+                        this.clearFilter();
+                    }
                     this.filter.type = val;
+                    this.chunk = 0;
+                    this.iconsChunked = [];
+                    this.old_filter.type = this.filter.type;
                     this.getIcons();
                 },
             },

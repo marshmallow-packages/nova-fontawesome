@@ -13,6 +13,15 @@ class NovaFontAwesome extends Field
      */
     public $component = 'nova-fontawesome';
 
+    public function __construct(...$arguments)
+    {
+        parent::__construct(...$arguments);
+
+        if (config('nova-fontawesome.pro')) {
+            $this->pro();
+        }
+    }
+
     public function pro()
     {
         return $this->withMeta([
