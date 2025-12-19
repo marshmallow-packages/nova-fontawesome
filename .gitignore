@@ -10,3 +10,5 @@ phpunit.xml
 Thumbs.db
 .env
 /CLAUDE.md
+/.claude
+/bun.lock
