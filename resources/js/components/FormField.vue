@@ -4,7 +4,8 @@
             <div>
                 <div v-if="value" class="display-icon mb-4">
                     <span class="relative inline-block p-6 border border-gray">
-                        <i :class="value + ' js-icon fa-3x'"></i>
+                        <div v-if="selectedIconSvg" v-html="selectedIconSvg" class="js-icon fa-2x inline-block"></div>
+                        <i v-else :class="value + ' js-icon fa-2x'"></i>
 
                         <span class="close-icon" @click="clear">
                             <i class="fa fa-times-circle"></i>
@@ -31,7 +32,7 @@
         />
 
                 <GeneralModal
-                    class="fontawesome-modal max-w-3xl"
+                    class="fontawesome-modal max-w-4xl"
                     v-if="modalOpen"
                     :field="field"
                     @confirm="confirmModal"
@@ -59,6 +60,7 @@
             icons: [],
             modalOpen: false,
             defaultIconObj: {},
+            selectedIconData: null,
         }),
         computed: {
             pro() {
@@ -86,11 +88,30 @@
                     return "";
                 }
             },
+            selectedIconSvg() {
+                if (this.selectedIconData && this.selectedIconData.svg) {
+                    return this.selectedIconData.svg;
+                }
+                return null;
+            },
+        },
+        watch: {
+            value: {
+                immediate: true,
+                handler(newVal) {
+                    if (newVal && !this.selectedIconData) {
+                        this.fetchIconDetails(newVal);
+                    }
+                },
+            },
         },
         mounted() {
-            this.icons.sort((a, b) =>
-                a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0
-            );
+            // Backwards compatibility: only sort if icons array exists
+            if (this.icons && this.icons.length > 0) {
+                this.icons.sort((a, b) =>
+                    a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0
+                );
+            }
 
             // Set default icon object
             if (this.defaultIcon && this.defaultIconType) {
@@ -106,11 +127,86 @@
             }
         },
         methods: {
+            async fetchIconDetails(iconClass) {
+                try {
+                    // Validate input
+                    if (!iconClass || typeof iconClass !== 'string') {
+                        return;
+                    }
+
+                    // Extract icon name from class string (e.g., "fa-solid fa-user" -> "user")
+                    const parts = iconClass.trim().split(' ');
+
+                    // Check if this looks like a valid Font Awesome class string
+                    // Must have at least one style prefix (fa-solid, fa-regular, etc.)
+                    const hasStylePrefix = parts.some(p => ['fa-solid', 'fa-regular', 'fa-light', 'fa-thin', 'fa-brands', 'fa-duotone'].includes(p));
+
+                    if (!hasStylePrefix) {
+                        // Invalid format - missing style prefix
+                        console.warn('Invalid icon format (missing style prefix):', iconClass);
+                        return;
+                    }
+
+                    const iconName = parts.find(p => p.startsWith('fa-') && !['fa-solid', 'fa-regular', 'fa-light', 'fa-thin', 'fa-brands', 'fa-duotone'].includes(p));
+
+                    if (!iconName) {
+                        // No icon name found after style prefix
+                        console.warn('Invalid icon format (no icon name found):', iconClass);
+                        return;
+                    }
+
+                    const name = iconName.replace('fa-', '');
+
+                    // Validation: ensure name is not empty
+                    if (!name || name.trim() === '') {
+                        console.warn('Invalid icon name: empty or whitespace');
+                        return;
+                    }
+
+                    const params = new URLSearchParams({
+                        version: this.field.version || '6.x',
+                    });
+
+                    const response = await fetch(`/nova-vendor/nova-fontawesome/icon/${name}?${params}`);
+
+                    // If 404, the icon doesn't exist in Font Awesome - silently ignore
+                    if (response.status === 404) {
+                        console.warn(`Icon "${name}" not found in Font Awesome API`);
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success && data.icon) {
+                        this.selectedIconData = this.getIconSvg(data.icon);
+                    }
+                } catch (error) {
+                    console.error('Error fetching icon details:', error);
+                }
+            },
+            getIconSvg(icon) {
+                if (!icon.svgs || icon.svgs.length === 0) {
+                    return null;
+                }
+
+                // Prefer solid, then regular, then first available
+                const preferredOrder = ['solid', 'regular', 'brands', 'light', 'thin', 'duotone'];
+
+                for (const preferred of preferredOrder) {
+                    const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
+                    if (svgData) {
+                        return { svg: svgData.svg, icon };
+                    }
+                }
+
+                return { svg: icon.svgs[0].svg, icon };
+            },
             openModal() {
                 this.modalOpen = true;
             },
             confirmModal(iconData) {
-                this.value = iconData;
+                this.value = iconData.value;
+                this.selectedIconData = iconData.svg ? { svg: iconData.svg } : null;
                 this.modalOpen = false;
             },
             closeModal() {
@@ -133,6 +229,7 @@
                     this.saveIcon(this.defaultIconObj);
                 } else {
                     this.value = "";
+                    this.selectedIconData = null;
                 }
             },
             /**

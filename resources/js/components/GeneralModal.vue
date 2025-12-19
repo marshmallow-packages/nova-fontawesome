@@ -13,20 +13,17 @@
                 <div class="w-1/2">
                     <SelectControl
                         v-model:selected="filter.type"
-                        @change="filter.type = $event"
                     >
-                        <option value disabled="disabled">
-                            {{ __("novaFontawesome.selectType.default") }}
-                        </option>
                         <option value="all">
                             {{ __("novaFontawesome.selectType.placeholder") }}
                         </option>
                         <option
-                            v-for="def in definitions"
+                            v-for="def in availableStyles"
                             :key="def"
-                            :value="stringToDefinition(def)"
-                            v-html="def"
-                        ></option>
+                            :value="def"
+                        >
+                            {{ formatStyleName(def) }}
+                        </option>
                     </SelectControl>
                 </div>
                 <div class="w-1/2">
@@ -36,7 +33,9 @@
                         class="w-full form-control form-input form-input-bordered"
                         :placeholder="__('novaFontawesome.search.placeholder')"
                         v-model="filter.search"
+                        @input="debouncedSearch"
                     />
+
                 </div>
             </div>
             <div
@@ -53,27 +52,28 @@
                 </div>
                 <div
                     class="flex flex-wrap items-stretch"
-                    v-else-if="icons.length > 0 && !isLoading"
+                    v-else-if="chunkedIcons.length > 0 && !isLoading"
                 >
                     <div
                         v-for="(icon, index) in chunkedIcons"
-                        :key="index"
+                        :key="icon.id || index"
                         class="inner flex items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
-                        <div
-                            :data-class="icon.prefix + ' fa-' + icon.iconName"
-                            class="p-2"
-                        >
-                            <i
-                                :class="icon.prefix + ' fa-' + icon.iconName + ' fa-2x'"
-                            ></i>
+                        <div class="p-2">
+                            <div class="icon-svg-container" v-html="getIconSvg(icon)"></div>
                             <span
                                 class="icon-name"
-                                v-html="icon.iconName"
+                                v-html="icon.id"
                             ></span>
                         </div>
                     </div>
+                </div>
+                <div v-else-if="!isLoading && filter.search.length >= minSearchLength" class="py-6 text-center text-md">
+                    {{ __("novaFontawesome.noResults") }}
+                </div>
+                <div v-else-if="!isLoading" class="py-6 text-center text-md">
+                    {{ __("novaFontawesome.searchPrompt") }}
                 </div>
             </div>
         </ModalContent>
@@ -91,7 +91,7 @@
                 <Button
                     type="button"
                     variant="solid"
-                    :disabled="isLoading"
+                    :disabled="isLoading || !value"
                     :loading="isLoading"
                     @click="handleConfirm"
                 >
@@ -105,17 +105,7 @@
 <script>
     import { FormField, HandlesValidationErrors } from "laravel-nova";
     import { Button } from 'laravel-nova-ui';
-
-    import { library, findIconDefinition } from "@fortawesome/fontawesome-svg-core";
-    import { fab } from "@fortawesome/free-brands-svg-icons";
-    import { far } from "@fortawesome/free-regular-svg-icons";
-    import { fas } from "@fortawesome/free-solid-svg-icons";
-    import { far as far_pro } from "@fortawesome/pro-regular-svg-icons";
-    import { fas as fas_pro } from "@fortawesome/pro-solid-svg-icons";
-
-    import { fad } from "@fortawesome/pro-duotone-svg-icons";
-    import { fal } from "@fortawesome/pro-light-svg-icons";
-    import { fat } from "@fortawesome/pro-thin-svg-icons";
+    import debounce from 'lodash/debounce';
 
     export default {
         name: "GeneralModal",
@@ -126,134 +116,121 @@
         props: ["field"],
         data: () => ({
             isLoading: false,
-            modalOpen: false,
-            library: {},
             icons: [],
             iconsChunked: [],
             expanded: false,
             chunk: 0,
             value: "",
-            definitions: [],
-            defaultIconObj: {},
-            iconTypes: {},
-            iconContainer: null,
+            selectedSvg: null,
             filter: {
-                type: "",
+                type: "all",
                 search: "",
             },
-            old_filter: {
-                type: "",
-                search: "",
-            },
+            debouncedSearch: null,
         }),
-        async beforeMount() {
-            this.isLoading = true;
-            await this.loadIcons();
+        computed: {
+            pro() {
+                return this.field.pro || false;
+            },
+            minSearchLength() {
+                return this.field.minSearchLength || 2;
+            },
+            availableStyles() {
+                const styles = this.field.styles || ['solid', 'regular', 'brands'];
+                return styles;
+            },
+            filteredIcons() {
+                if (this.filter.type === 'all') {
+                    return this.icons;
+                }
+
+                return this.icons.filter(icon => {
+                    const freeStyles = icon.familyStylesByLicense?.free || [];
+                    return freeStyles.some(s => s.style === this.filter.type);
+                });
+            },
+            chunkedIcons() {
+                return this.iconsChunked;
+            },
+            defaultIcon() {
+                return this.field.default_icon || "";
+            },
+            defaultIconType() {
+                return this.field.default_icon_type || "";
+            },
+            enforceDefaultIcon() {
+                return this.field.enforce_default_icon || false;
+            },
+            defaultIconOutput() {
+                return this.defaultIconType + " fa-" + this.defaultIcon;
+            },
+        },
+        created() {
+            this.debouncedSearch = debounce(this.searchIcons, 300);
         },
         mounted() {
-            this.filter.type = "all";
-            this.old_filter.type = "all";
-
-            if (this.icons.length > 0) {
-                this.icons.sort((a, b) =>
-                    a.iconName > b.iconName
-                        ? 1
-                        : b.iconName > a.iconName
-                        ? -1
-                        : 0
-                );
-            }
-
-            // Set default icon object
-            if (this.defaultIcon && this.defaultIconType) {
-                let i = this.icons.filter(
-                    (icon) =>
-                        icon.prefix === this.defaultIconType &&
-                        icon.iconName === this.defaultIcon
-                );
-
-                if (i[0]) {
-                    this.defaultIconObj = i[0];
-                }
-            }
+            // Optionally load popular icons on mount
+            this.loadPopularIcons();
         },
-
         methods: {
-            async loadIcons() {
-                let arr = {};
-                this.isLoading = true;
-
-                library.add(fab);
-
-                if (this.pro) {
-                    library.add(fas_pro, far_pro, fad, fal, fat);
-                } else {
-                    library.add(fas, far);
+            async searchIcons() {
+                if (this.filter.search.length < this.minSearchLength) {
+                    this.icons = [];
+                    this.iconsChunked = [];
+                    this.chunk = 0;
+                    return;
                 }
 
-                arr = library.definitions;
-
-                this.icon_types = arr;
-                let icons = [];
-                for (let key in arr) {
-                    this.definitions.push(this.definitionToString(key));
-                    for (let i in arr[key]) {
-                        let iconName = i;
-                        let iconData = arr[key][i];
-                        let icon = {
-                            prefix: key,
-                            iconName: iconName,
-                            iconData: iconData,
-                        };
-
-                        if (this.canShowIcon(icon)) {
-                            icon.show = true;
-                            icons.push(icon);
-                        }
-                    }
-                }
-                this.isLoading = false;
-                this.icons = icons;
-
-                return this.icons;
-            },
-            async getIcons() {
                 this.isLoading = true;
-
                 this.chunk = 0;
                 this.iconsChunked = [];
 
-                let icons = [];
-                let all_types = this.icon_types;
+                try {
+                    const params = new URLSearchParams({
+                        query: this.filter.search,
+                        version: this.field.version || '6.x',
+                        first: this.field.maxResults || 50,
+                        freeOnly: this.field.freeOnly !== false,
+                    });
 
-                for (let key in all_types) {
-                    let show = this.displayFilter(key);
-                    console.log(show, key);
-                    if (show) {
-                        for (let i in all_types[key]) {
-                            let iconName = i;
-                            let iconData = all_types[key][i];
-                            let icon = {
-                                prefix: key,
-                                iconName: iconName,
-                                iconData: iconData,
-                            };
-
-                            let show = this.displayIcon(icon);
-                            if (show) {
-                                icons.push(icon);
-                            }
-                        }
+                    if (this.field.styles) {
+                        this.field.styles.forEach(style => {
+                            params.append('styles[]', style);
+                        });
                     }
-                }
 
-                this.$nextTick(function () {
-                    this.icons = icons;
+                    const response = await fetch(`/nova-vendor/nova-fontawesome/search?${params}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.icons = data.icons;
+                        this.getChunk();
+                    }
+                } catch (error) {
+                    console.error('Error searching icons:', error);
+                    this.icons = [];
+                } finally {
                     this.isLoading = false;
-                    this.getChunk();
-                });
+                }
+            },
 
-                this.iconContainer = document.querySelector("#iconContainer");
+            async loadPopularIcons() {
+                try {
+                    const params = new URLSearchParams({
+                        version: this.field.version || '6.x',
+                        first: 20,
+                    });
+
+                    const response = await fetch(`/nova-vendor/nova-fontawesome/popular?${params}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.icons = data.icons;
+                        this.getChunk();
+                    }
+                } catch (error) {
+                    console.error('Error fetching popular icons:', error);
+                }
             },
 
             onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
@@ -265,22 +242,12 @@
                     this.getChunk();
                 }
             },
+
             getChunk() {
-                let chunkSize = 100;
+                const chunkSize = 100;
+                const filtered = this.filteredIcons;
 
-                let sortedIcons = this.icons.sort((a, b) => {
-                    let fa = a.iconName.toLowerCase(),
-                        fb = b.iconName.toLowerCase();
-                    if (fa < fb) {
-                        return -1;
-                    }
-                    if (fa > fb) {
-                        return 1;
-                    }
-                    return 0;
-                });
-
-                let nextChunk = this.icons.slice(
+                const nextChunk = filtered.slice(
                     this.chunk,
                     this.chunk + chunkSize
                 );
@@ -289,235 +256,104 @@
                 this.expanded = false;
                 this.chunk += chunkSize;
             },
-            displayIcon(icon) {
-                if (this.filter.search === "") {
-                    return true;
-                }
-                let keyword = this.filter.search.toUpperCase();
-                let alt = keyword.replace("-", " ");
-                let name = icon.iconName.toUpperCase();
-                let nameAlt = name.replace("-", " ");
 
-                return (
-                    name.includes(keyword) ||
-                    name.indexOf(keyword) !== -1 ||
-                    nameAlt.includes(alt) ||
-                    nameAlt.indexOf(alt) !== -1
-                );
+            formatStyleName(style) {
+                if (style === 'all') {
+                    return this.__("novaFontawesome.selectType.placeholder");
+                }
+
+                const translations = {
+                    solid: this.__("novaFontawesome.types.solid"),
+                    regular: this.__("novaFontawesome.types.regular"),
+                    light: this.__("novaFontawesome.types.light"),
+                    thin: this.__("novaFontawesome.types.thin"),
+                    duotone: this.__("novaFontawesome.types.duotone"),
+                    brands: this.__("novaFontawesome.types.brands"),
+                };
+
+                return translations[style] || style.charAt(0).toUpperCase() + style.slice(1);
             },
-            displayFilter(typeset) {
-                return (
-                    this.filter.type == "" ||
-                    this.filter.type == "all" ||
-                    this.filter.type == typeset
-                );
-            },
-            canShowIcon(icon) {
-                if (typeof this.field.only !== "undefined") {
-                    if (this.field.only.indexOf(icon.iconName) === -1) {
-                        return false;
+
+            getIconSvg(icon) {
+                if (!icon.svgs || icon.svgs.length === 0) {
+                    return '<svg viewBox="0 0 24 24"><rect fill="#ccc" width="24" height="24" rx="4"/></svg>';
+                }
+
+                // Prefer solid, then regular, then first available
+                const preferredOrder = ['solid', 'regular', 'brands', 'light', 'thin', 'duotone'];
+
+                for (const preferred of preferredOrder) {
+                    const svg = icon.svgs.find(s => s.familyStyle?.style === preferred);
+                    if (svg) {
+                        return svg.svg;
                     }
                 }
 
-                return !icon.iconName ||
-                    !icon.prefix ||
-                    icon.iconName === "font-awesome-logo-full"
-                    ? false
-                    : true;
+                return icon.svgs[0].svg;
             },
 
-            clear() {
-                if (
-                    this.enforceDefaultIcon &&
-                    this.defaultIcon &&
-                    this.defaultIconType &&
-                    this.defaultIconObj.iconName
-                ) {
-                    this.value = this.defaultIconOutput;
-                    this.saveIcon(this.defaultIconObj);
-                } else {
-                    this.value = "";
+            getIconStyle(icon) {
+                if (!icon.familyStylesByLicense?.free || icon.familyStylesByLicense.free.length === 0) {
+                    return 'solid';
                 }
 
-                this.clearFilter();
-            },
-
-            clearFilter() {
-                this.chunk = 0;
-                this.iconsChunked = [];
-                this.iconContainer.scrollTop = 0;
-                this.filter.type = "";
-                this.filter.search = "";
-            },
-
-            closeModal() {
-                this.modalOpen = false;
-                this.clearFilter();
-                this.handleClose();
-            },
-
-            toggleModal() {
-                this.modalOpen = !this.modalOpen;
-                this.clearFilter();
+                return icon.familyStylesByLicense.free[0].style || 'solid';
             },
 
             saveIcon(icon) {
-                let fa6_prefixes = {
-                    fas: "fa-solid",
-                    far: "fa-regular",
-                    fal: "fa-light",
-                    fat: "fa-thin",
-                    fab: "fa-brands",
-                    fad: "fa-duotone",
+                const styleMap = {
+                    solid: 'fa-solid',
+                    regular: 'fa-regular',
+                    light: 'fa-light',
+                    thin: 'fa-thin',
+                    brands: 'fa-brands',
+                    duotone: 'fa-duotone',
                 };
-                let old_prefix = icon.prefix;
-                let fa6_prefix = fa6_prefixes[old_prefix];
 
-                this.value = fa6_prefix + " fa-" + icon.iconName;
+                const style = this.getIconStyle(icon);
+                const fa6_prefix = styleMap[style] || 'fa-solid';
 
-                this.clearFilter();
+                this.value = fa6_prefix + " fa-" + icon.id;
+                this.selectedSvg = this.getIconSvg(icon);
+
                 this.handleConfirm();
             },
 
             handleClose() {
                 this.$emit("close");
             },
+
             handleConfirm() {
-                this.$emit("confirm", this.value);
-            },
-
-            /*
-             * Convert the class to string
-             */
-            definitionToString(def) {
-                switch (def) {
-                    case "far":
-                    case "fa-regular":
-                        return this.__("novaFontawesome.types.regular");
-                        break;
-                    case "fas":
-                    case "fa-solid":
-                        return this.__("novaFontawesome.types.solid");
-                        break;
-                    case "fab":
-                    case "fa-brands":
-                        return this.__("novaFontawesome.types.brands");
-                        break;
-                    case "fal":
-                    case "fa-light":
-                        return this.__("novaFontawesome.types.light");
-                        break;
-                    case "fad":
-                    case "fa-duotone":
-                        return this.__("novaFontawesome.types.duotone");
-                        break;
-                    case "fat":
-                    case "fa-thin":
-                        return this.__("novaFontawesome.types.thin");
-                        break;
-                }
-            },
-
-            /*
-             * Convert the string to class method
-             */
-            stringToDefinition(str) {
-                switch (str) {
-                    case this.__("novaFontawesome.types.regular"):
-                        return "far";
-                        break;
-                    case this.__("novaFontawesome.types.solid"):
-                        return "fas";
-                        break;
-                    case this.__("novaFontawesome.types.brands"):
-                        return "fab";
-                        break;
-                    case this.__("novaFontawesome.types.light"):
-                        return "fal";
-                        break;
-                    case this.__("novaFontawesome.types.duotone"):
-                        return "fad";
-                        break;
-                    case this.__("novaFontawesome.types.thin"):
-                        return "fat";
-                        break;
-                }
-            },
-
-            /*
-             * Set the initial, internal value for the field.
-             */
-            setInitialValue() {
-                this.value = this.field.value || this.defaultIconOutput;
-            },
-
-            /**
-             * Fill the given FormData object with the field's internal value.
-             */
-            fill(formData) {
-                formData.append(
-                    this.field.attribute,
-                    this.value || this.defaultIconOutput
-                );
-            },
-
-            /**
-             * Update the field's internal value.
-             */
-            handleChange(value) {
-                this.value = value;
-            },
-        },
-        computed: {
-            pro() {
-                return this.field.pro || false;
-            },
-            defaultIcon() {
-                return this.field.default_icon || "";
-            },
-            defaultIconType() {
-                return this.field.default_icon_type || "";
-            },
-            addButtonText() {
-                return (
-                    this.field.add_button_text ||
-                    this.__("novaFontawesome.addIcon")
-                );
-            },
-            enforceDefaultIcon() {
-                return this.field.enforce_default_icon || false;
-            },
-            defaultIconOutput() {
-                return this.defaultIconType + " fa-" + this.defaultIcon;
-            },
-            chunkedIcons() {
-                return this.iconsChunked;
+                this.$emit("confirm", {
+                    value: this.value,
+                    svg: this.selectedSvg
+                });
             },
         },
 
         watch: {
-            "filter.search": {
-                handler(val) {
-                    this.filter.search = val;
-                    this.chunk = 0;
-                    this.iconsChunked = [];
-                    this.getIcons();
-                },
-            },
             "filter.type": {
                 handler(val) {
-                    if (this.old_filter.type !== val) {
-                        this.clearFilter();
-                    }
-                    this.filter.type = val;
                     this.chunk = 0;
                     this.iconsChunked = [];
-                    this.old_filter.type = this.filter.type;
-                    this.getIcons();
+                    this.getChunk();
                 },
             },
         },
     };
 </script>
 
-<style scoped></style>
+<style scoped>
+.icon-svg-container {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.icon-svg-container :deep(svg) {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+</style>
