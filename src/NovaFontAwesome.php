@@ -57,4 +57,64 @@ class NovaFontAwesome extends Field
             'only' => $icons
         ]);
     }
+
+    /**
+     * Set the Font Awesome version to use.
+     */
+    public function version(string $version)
+    {
+        return $this->withMeta([
+            'version' => $version
+        ]);
+    }
+
+    /**
+     * Set the icon styles to show.
+     */
+    public function styles(array $styles)
+    {
+        return $this->withMeta([
+            'styles' => $styles
+        ]);
+    }
+
+    /**
+     * Only show free icons.
+     */
+    public function freeOnly()
+    {
+        return $this->withMeta([
+            'freeOnly' => true
+        ]);
+    }
+
+    /**
+     * Include Pro icons (requires Font Awesome Pro subscription).
+     */
+    public function includePro()
+    {
+        return $this->withMeta([
+            'freeOnly' => false
+        ]);
+    }
+
+    /**
+     * Set maximum number of search results.
+     */
+    public function maxResults(int $max)
+    {
+        return $this->withMeta([
+            'maxResults' => $max
+        ]);
+    }
+
+    /**
+     * Set minimum search length before triggering search.
+     */
+    public function minSearchLength(int $min)
+    {
+        return $this->withMeta([
+            'minSearchLength' => $min
+        ]);
+    }
 }

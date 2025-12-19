@@ -4,12 +4,14 @@ namespace Marshmallow\NovaFontAwesome;
 
 use Laravel\Nova\Nova;
 use Laravel\Nova\Events\ServingNova;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
 
 class FieldServiceProvider extends ServiceProvider
 {
     use LoadsNovaTranslations;
+
     /**
      * Bootstrap any application services.
      *
@@ -17,6 +19,8 @@ class FieldServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->routes();
+
         Nova::serving(function (ServingNova $event) {
             Nova::script('nova-fontawesome', __DIR__ . '/../dist/js/nova-fontawesome.js');
 
@@ -31,6 +35,20 @@ class FieldServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/nova-fontawesome.php' => config_path('nova-fontawesome.php'),
         ], 'nova-fontawesome-config');
+    }
+
+    /**
+     * Register the field's routes.
+     */
+    protected function routes(): void
+    {
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        Route::middleware(['nova'])
+            ->prefix('nova-vendor/nova-fontawesome')
+            ->group(__DIR__ . '/../routes/api.php');
     }
 
     /**

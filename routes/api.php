@@ -1,0 +1,8 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Marshmallow\NovaFontAwesome\Http\Controllers\FontAwesomeController;
+
+Route::get('/search', [FontAwesomeController::class, 'search']);
+Route::get('/icon/{name}', [FontAwesomeController::class, 'icon']);
+Route::get('/popular', [FontAwesomeController::class, 'popular']);
