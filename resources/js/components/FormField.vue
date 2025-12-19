@@ -3,8 +3,8 @@
         <template #field>
             <div>
                 <div v-if="value" class="display-icon mb-4">
-                    <span class="relative inline-block p-8 border border-gray">
-                        <i :class="value + ' js-icon'"></i>
+                    <span class="relative inline-block p-6 border border-gray">
+                        <i :class="value + ' js-icon fa-3x'"></i>
 
                         <span class="close-icon" @click="clear">
                             <i class="fa fa-times-circle"></i>
@@ -206,59 +206,66 @@
     }
 
     .fontawesome-inner {
-        height: 90%;
-        overflow: scroll;
-    }
-
-    .h-90p {
-        height: 90%;
-    }
-
-    .fontawesome-close {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        right: 1.5rem;
-        font-size: 1.5rem;
-        color: #3c4655;
+        overflow-y: auto;
     }
 
     .icon-name {
         display: block;
-        font-size: 12px;
+        font-size: 0.75rem;
         margin-top: 0.5em;
-        background: #fafafa;
-        padding: 0.2em;
+        background: rgb(var(--colors-gray-100));
+        padding: 0.25em 0.5em;
+        border-radius: 0.25rem;
+        color: rgb(var(--colors-gray-700));
+    }
+
+    .dark .icon-name {
+        background: rgb(var(--colors-gray-700));
+        color: rgb(var(--colors-gray-300));
     }
 
     .border-red {
-        border-color: rgba(var(--colors-primary-500));
+        border-color: rgb(var(--colors-red-500));
     }
 
     .icon-box {
-        width: 25%;
-        outline: 1px solid #e0e0e0;
-        outline-offset: -0.5rem;
+        width: 24%;
+        border: 1px solid rgb(var(--colors-gray-200));
+        border-radius: 0.375rem;
+        margin: 0.25rem;
+    }
+
+    .dark .icon-box {
+        border-color: rgb(var(--colors-gray-700));
     }
 
     .icon-box:hover {
-        outline: 1px solid rgba(var(--colors-primary-500));
-        color: rgba(var(--colors-primary-500));
+        border-color: rgb(var(--colors-primary-500));
+        color: rgb(var(--colors-primary-500));
+        background-color: rgb(var(--colors-primary-50));
+    }
+
+    .dark .icon-box:hover {
+        background-color: rgb(var(--colors-primary-900) / 0.3);
     }
 
     .border-gray {
-        border-color: #e0e0e0;
+        border-color: rgb(var(--colors-gray-300));
+    }
+
+    .dark .border-gray {
+        border-color: rgb(var(--colors-gray-700));
     }
 
     @media (max-width: 1279px) {
         .icon-box {
-            width: 25%;
+            width: 24%;
         }
     }
 
     @media (max-width: 900px) {
         .icon-box {
-            width: 50%;
+            width: 49%;
         }
         .h-90p {
             height: 80%;

@@ -1,24 +1,17 @@
 <template>
     <Modal
         :show="true"
-        @confirm="handleConfirm"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+        size="4xl"
+        role="dialog"
         @close="handleClose"
-        class="max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
     >
-        <ModalHeader class="px-6 py-6 border-b relative border-gray">
-            {{ __("novaFontawesome.modalTitle") }}
+        <ModalHeader v-text="__('novaFontawesome.modalTitle')" />
 
-            <a href="#" class="fontawesome-close" @click.prevent="handleClose">
-                <i class="fa fa-times"></i>
-            </a>
-        </ModalHeader>
-
-        <div class="rounded-lg flex-1 relative h-90p bg-white">
-            <div class="flex px-2 py-4 flex-wrap border-b border-gray">
-                <div class="w-1/2 px-4">
+        <ModalContent class="space-y-2 px-6">
+            <div class="flex gap-4">
+                <div class="w-1/2">
                     <SelectControl
-                        class="w-full"
-                        :placeholder="__('All')"
                         v-model:selected="filter.type"
                         @change="filter.type = $event"
                     >
@@ -36,7 +29,7 @@
                         ></option>
                     </SelectControl>
                 </div>
-                <div class="w-1/2 px-4">
+                <div class="w-1/2">
                     <input
                         type="text"
                         id="search"
@@ -47,7 +40,8 @@
                 </div>
             </div>
             <div
-                class="px-4 py-4 fontawesome-inner"
+                class="fontawesome-inner overflow-y-auto"
+                style="max-height: 60vh;"
                 @scroll="onScroll"
                 id="iconContainer"
             >
@@ -58,21 +52,21 @@
                     {{ __("novaFontawesome.loading") }}...
                 </div>
                 <div
-                    class="flex flex-wrap items-stretch -mx-2"
+                    class="flex flex-wrap items-stretch"
                     v-else-if="icons.length > 0 && !isLoading"
                 >
                     <div
                         v-for="(icon, index) in chunkedIcons"
                         :key="index"
-                        class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
+                        class="inner flex items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
                         <div
                             :data-class="icon.prefix + ' fa-' + icon.iconName"
-                            class="p-4"
+                            class="p-2"
                         >
                             <i
-                                :class="icon.prefix + ' fa-' + icon.iconName"
+                                :class="icon.prefix + ' fa-' + icon.iconName + ' fa-2x'"
                             ></i>
                             <span
                                 class="icon-name"
@@ -82,30 +76,27 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </ModalContent>
 
-        <ModalFooter class="flex justify-end">
-            <div class="ml-auto">
-                <CancelButton
-                    component="button"
+        <ModalFooter>
+            <div class="ml-auto flex gap-3">
+                <Button
                     type="button"
-                    dusk="cancel-action-button"
-                    @click.prevent="handleClose"
+                    variant="ghost"
+                    @click="handleClose"
                 >
                     {{ __("novaFontawesome.cancel") }}
-                </CancelButton>
+                </Button>
 
-                <LoadingButton
-                    class="ml-3"
-                    type="submit"
-                    ref="runButton"
-                    component="DefaultButton"
+                <Button
+                    type="button"
+                    variant="solid"
                     :disabled="isLoading"
                     :loading="isLoading"
                     @click="handleConfirm"
                 >
                     {{ __("novaFontawesome.save") }}
-                </LoadingButton>
+                </Button>
             </div>
         </ModalFooter>
     </Modal>
@@ -113,8 +104,9 @@
 
 <script>
     import { FormField, HandlesValidationErrors } from "laravel-nova";
+    import { Button } from 'laravel-nova-ui';
 
-    import { library } from "@fortawesome/fontawesome-svg-core";
+    import { library, findIconDefinition } from "@fortawesome/fontawesome-svg-core";
     import { fab } from "@fortawesome/free-brands-svg-icons";
     import { far } from "@fortawesome/free-regular-svg-icons";
     import { fas } from "@fortawesome/free-solid-svg-icons";
@@ -128,7 +120,9 @@
     export default {
         name: "GeneralModal",
         mixins: [FormField, HandlesValidationErrors],
-
+        components: {
+            Button,
+        },
         props: ["field"],
         data: () => ({
             isLoading: false,
@@ -234,6 +228,7 @@
 
                 for (let key in all_types) {
                     let show = this.displayFilter(key);
+                    console.log(show, key);
                     if (show) {
                         for (let i in all_types[key]) {
                             let iconName = i;
