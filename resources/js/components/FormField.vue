@@ -19,9 +19,16 @@
                     :placeholder="field.name"
                     v-model="value"
                 />
-                <DefaultButton type="button" @click.prevent="openModal">
-                    {{ addButtonText }}
-                </DefaultButton>
+          <Button
+          type="button"
+          dusk="open-modal-button"
+          state="default"
+          variant="solid"
+          :disabled="modalOpen"
+          :loading="modalOpen"
+          :label="addButtonText"
+          @click.prevent="openModal"
+        />
 
                 <GeneralModal
                     class="fontawesome-modal max-w-3xl"
@@ -36,13 +43,15 @@
 </template>
 
 <script>
-    import { FormField, HandlesValidationErrors } from "laravel-nova";
+    import { FormField, HandlesValidationErrors, Errors } from "laravel-nova";
+    import { Button } from 'laravel-nova-ui';
     import GeneralModal from "./GeneralModal.vue";
 
     export default {
         mixins: [FormField, HandlesValidationErrors],
         props: ["resourceName", "resourceId", "field"],
         components: {
+            Button,
             GeneralModal,
         },
         data: () => ({
