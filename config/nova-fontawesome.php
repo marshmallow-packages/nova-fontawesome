@@ -83,7 +83,6 @@ return [
      * Please make sure the files are in the public directory.
      */
     'js' => [
-        '/vendor/nova-fontawesome/all.min.js',
         // '/vendor/fontawesome/all.js',
         // add more if you need to...
     ],
@@ -94,7 +93,7 @@ return [
      * Please make sure the files are in the public directory.
      */
     'css' => [
-        '/css/fontawesome.css',
+        // '/css/fontawesome.css',
         // add more if you need to...
     ],
 
