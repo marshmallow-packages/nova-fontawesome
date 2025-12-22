@@ -1,6 +1,8 @@
 {
     "novaFontawesome.addIcon": "Icoon toevoegen",
     "novaFontawesome.modalTitle": "Selecteer Icoon",
+    "novaFontawesome.selectFamily.placeholder": "Alle Families",
+    "novaFontawesome.selectStyle.placeholder": "Alle Stijlen",
     "novaFontawesome.selectType.placeholder": "Alles",
     "novaFontawesome.selectType.default": "Selecteer een type",
     "novaFontawesome.search.placeholder": "Zoek iconen",

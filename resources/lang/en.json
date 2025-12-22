@@ -1,6 +1,8 @@
 {
     "novaFontawesome.addIcon": "Add Icon",
     "novaFontawesome.modalTitle": "Select Icon",
+    "novaFontawesome.selectFamily.placeholder": "All Families",
+    "novaFontawesome.selectStyle.placeholder": "All Styles",
     "novaFontawesome.selectType.placeholder": "All",
     "novaFontawesome.selectType.default": "Select a type",
     "novaFontawesome.search.placeholder": "Search icons",
