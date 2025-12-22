@@ -313,6 +313,8 @@ class FontAwesomeController extends Controller
                             family
                             style
                         }
+                        height
+                        width
                         pathData
                     }
                 }

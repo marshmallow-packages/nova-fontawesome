@@ -281,7 +281,7 @@
 
             getIconSvg(icon) {
                 if (!icon.svgs || icon.svgs.length === 0) {
-                    return '<svg viewBox="0 0 24 24"><rect fill="#ccc" width="24" height="24" rx="4"/></svg>';
+                    return '<svg viewBox="0 0 512 512"></svg>';
                 }
 
                 // Prefer solid, then regular, then first available
@@ -290,16 +290,46 @@
                 for (const preferred of preferredOrder) {
                     const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
                     if (svgData && svgData.pathData) {
-                        return `<svg viewBox="0 0 512 512"><path d="${svgData.pathData}"/></svg>`;
+                        return this.buildSvgFromPath(svgData.pathData, svgData.familyStyle?.style);
                     }
                 }
 
                 // Fallback to first available
                 if (icon.svgs[0] && icon.svgs[0].pathData) {
-                    return `<svg viewBox="0 0 512 512"><path d="${icon.svgs[0].pathData}"/></svg>`;
+                    return this.buildSvgFromPath(icon.svgs[0].pathData, icon.svgs[0].familyStyle?.style);
                 }
 
-                return '<svg viewBox="0 0 24 24"><rect fill="#ccc" width="24" height="24" rx="4"/></svg>';
+                return '<svg viewBox="0 0 512 512"></svg>';
+            },
+
+            buildSvgFromPath(pathData, style) {
+                if (!pathData || pathData.length === 0) {
+                    return '<svg viewBox="0 0 512 512"></svg>';
+                }
+
+                // pathData is an array
+                // For monotone: only one path (index 0)
+                // For duotone: two paths - index 0 is secondary, index 1 is primary
+                const isDuotone = style === 'duotone' && pathData.length === 2;
+
+                let paths = '';
+                if (isDuotone) {
+                    // Secondary path (lighter)
+                    if (pathData[0]) {
+                        paths += `<path d="${pathData[0]}" opacity="0.4"/>`;
+                    }
+                    // Primary path
+                    if (pathData[1]) {
+                        paths += `<path d="${pathData[1]}"/>`;
+                    }
+                } else {
+                    // Monotone icon - single path
+                    if (pathData[0]) {
+                        paths = `<path d="${pathData[0]}"/>`;
+                    }
+                }
+
+                return `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
 
             getIconStyle(icon) {
@@ -356,7 +386,7 @@
 <style scoped>
 .icon-box {
     width: 24%;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 4 / 3;
     border: 1px solid rgb(var(--colors-gray-200));
     border-radius: 0.375rem;
     margin: 0.25rem;

@@ -4,7 +4,8 @@
             <div>
                 <div v-if="value" class="display-icon mb-4">
                     <span class="relative inline-flex items-center justify-center p-3 border border-gray" style="width: 80px; height: 80px;">
-                        <div v-if="selectedIconSvg" v-html="selectedIconSvg" class="display-icon-svg"></div>
+                        <div v-if="isLoading" class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded" style="width: 4rem; height: 4rem;"></div>
+                        <div v-else-if="selectedIconSvg" v-html="selectedIconSvg" class="p-2 display-icon-svg fill-current text-gray-700 dark:text-gray-300"></div>
                         <i v-else :class="value + ' js-icon fa-2x fa-fw'"></i>
 
                         <span class="close-icon" @click="clear">
@@ -163,6 +164,8 @@
                         return;
                     }
 
+                    this.isLoading = true;
+
                     const params = {
                         version: this.field.version || '6.x',
                     };
@@ -179,6 +182,8 @@
                         return;
                     }
                     console.error('Error fetching icon details:', error);
+                } finally {
+                    this.isLoading = false;
                 }
             },
             getIconSvg(icon) {
@@ -192,18 +197,52 @@
                 for (const preferred of preferredOrder) {
                     const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
                     if (svgData && svgData.pathData) {
-                        const svg = `<svg viewBox="0 0 512 512"><path d="${svgData.pathData}"/></svg>`;
-                        return { svg, icon };
+                        return { svg: this.buildSvgFromPath(svgData), icon };
                     }
                 }
 
                 // Fallback to first available
                 if (icon.svgs[0] && icon.svgs[0].pathData) {
-                    const svg = `<svg viewBox="0 0 512 512"><path d="${icon.svgs[0].pathData}"/></svg>`;
-                    return { svg, icon };
+                    const svgData = icon.svgs[0];
+                    return { svg: this.buildSvgFromPath(svgData), icon };
                 }
 
                 return null;
+            },
+            buildSvgFromPath(svgData) {
+                const style = svgData.familyStyle?.style || 'regular';
+                const pathData = svgData.pathData;
+                const width = svgData.width || 512;
+                const height = svgData.height || 512;
+
+                console.log('Building SVG from data:', svgData, 'with style:', style);
+                if (!pathData || pathData.length === 0) {
+                    return `<svg viewBox="0 0 ${width} ${height}"></svg>`;
+                }
+
+                // pathData is an array
+                // For monotone: only one path (index 0)
+                // For duotone: two paths - index 0 is secondary, index 1 is primary
+                const isDuotone = style === 'duotone' && pathData.length === 2;
+
+                let paths = '';
+                if (isDuotone) {
+                    // Secondary path (lighter)
+                    if (pathData[0]) {
+                        paths += `<path d="${pathData[0]}" opacity="0.4"/>`;
+                    }
+                    // Primary path
+                    if (pathData[1]) {
+                        paths += `<path d="${pathData[1]}"/>`;
+                    }
+                } else {
+                    // Monotone icon - single path
+                    if (pathData[0]) {
+                        paths = `<path d="${pathData[0]}"/>`;
+                    }
+                }
+
+                return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
             openModal() {
                 this.modalOpen = true;
@@ -270,12 +309,15 @@
         justify-content: center;
         width: 4rem;
         height: 4rem;
-        fill: rgb(var(--colors-gray-700));
     }
 
     .display-icon-svg :deep(svg) {
         width: 100%;
         height: 100%;
+        fill: currentColor;
+    }
+
+    .display-icon-svg svg {
         fill: currentColor;
     }
 
@@ -291,9 +333,7 @@
 
         opacity: 0.75;
         cursor: pointer;
-
         transition: all 0.2s ease-in-out;
-
         transform: translate(50%, -50%);
     }
 
@@ -390,5 +430,22 @@
         .h-90p {
             height: 80%;
         }
+    }
+
+    .skeleton-box {
+        display: inline-block;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 </style>
