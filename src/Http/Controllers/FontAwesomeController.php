@@ -322,7 +322,7 @@ class FontAwesomeController extends Controller
         $withFilters = $family && $style;
 
         if ($withFilters) {
-            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
+            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
             $queryVariables['family'] = $formatted['family'];
             $queryVariables['style'] = $formatted['style'];
 
@@ -420,9 +420,7 @@ class FontAwesomeController extends Controller
         ];
 
         if ($hasFilter) {
-            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
-
-            dd($formatted);
+            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
             $queryVariables['family'] = $formatted['family'];
             $queryVariables['style'] = $formatted['style'];
 
