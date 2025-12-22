@@ -356,7 +356,7 @@
 <style scoped>
 .icon-box {
     width: 24%;
-    aspect-ratio: 2 / 3;
+    aspect-ratio: 3 / 2;
     border: 1px solid rgb(var(--colors-gray-200));
     border-radius: 0.375rem;
     margin: 0.25rem;
