@@ -207,8 +207,6 @@
                     // Parse the Font Awesome class string
                     const { faFamily, faStyle, faIcon } = this.parseFontAwesomeClasses(iconClass);
 
-                    console.log('Fetching icon details for:', { faFamily, faStyle, faIcon }); // Debug log
-
                     // Validation: ensure name is not empty
                     if (!faIcon || faIcon.trim() === '') {
                         console.warn('Invalid icon name: empty or whitespace');
