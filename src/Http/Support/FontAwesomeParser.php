@@ -56,30 +56,27 @@ class FontAwesomeParser
     {
         $classes = $this->toClassArray($classString ?? $this->classString);
         $family = 'classic';
+        $foundExplicitFamily = false;
 
         foreach ($classes as $class) {
             // Check shorthand prefixes first
             if (isset($this->shorthandMap[$class])) {
                 $family = $this->shorthandMap[$class]['family'];
+                $foundExplicitFamily = true;
                 continue;
             }
 
             // Check explicit family modifiers
             if (isset($this->familyMap[$class])) {
                 $family = $this->familyMap[$class];
+                $foundExplicitFamily = true;
                 continue;
             }
 
             // Brands style class implies brands family
             if ($class === 'fa-brands') {
                 $family = 'brands';
-            }
-
-            // Classic style classes (without explicit family modifier) imply classic family
-            // These are: fa-solid, fa-regular, fa-light, fa-thin
-            if (isset($this->styleMap[$class]) && $class !== 'fa-brands') {
-                // If we see a style class and no family modifier was found, it's classic
-                $family = 'classic';
+                $foundExplicitFamily = true;
             }
         }
 
@@ -122,55 +119,52 @@ class FontAwesomeParser
         return null;
     }
 
+    /**
+     * Infer the family from a style class or shorthand.
+     * Useful when only style is provided and you need to determine the family.
+     */
     public function inferFamilyFromStyle(?string $classString = null): string
     {
         $classes = $this->toClassArray($classString ?? $this->classString);
 
-        // Check shorthand prefixes that imply family
-        $familyImplyingShorthands = [
-            'fas' => 'classic',
-            'far' => 'classic',
-            'fal' => 'classic',
-            'fat' => 'classic',
-            'fad' => 'duotone',
-            'fab' => 'brands',
-            'fass' => 'sharp',
-            'fasr' => 'sharp',
-            'fasl' => 'sharp',
-            'fast' => 'sharp',
-            'fasds' => 'sharp-duotone',
-        ];
-
         foreach ($classes as $class) {
-            if (isset($familyImplyingShorthands[$class])) {
-                return $familyImplyingShorthands[$class];
+            // Check shorthand prefixes that imply family
+            if (isset($this->shorthandMap[$class])) {
+                return $this->shorthandMap[$class]['family'];
             }
 
-            // Check family modifiers
-            if ($class === 'fa-sharp') {
-                return 'sharp';
+            // Check explicit family modifiers
+            if (isset($this->familyMap[$class])) {
+                return $this->familyMap[$class];
             }
 
-            if ($class === 'fa-sharp-duotone') {
-                return 'sharp-duotone';
-            }
-
-            if ($class === 'fa-duotone') {
-                return 'duotone';
-            }
-
+            // Brands style implies brands family
             if ($class === 'fa-brands') {
                 return 'brands';
             }
-
-            // Classic styles (when no family modifier is present)
-            if (in_array($class, ['fa-solid', 'fa-regular', 'fa-light', 'fa-thin'])) {
-                return 'classic';
-            }
         }
 
-        // Default to classic
+        // Default to classic for standalone style classes like fa-light, fa-regular, etc.
         return 'classic';
+    }
+
+    /**
+     * Infer the default style from a family.
+     * - Brands family only has 'brands' style
+     * - All other families default to 'solid'
+     */
+    public function inferStyleFromFamily(?string $family = null): string
+    {
+        $family ??= $this->family();
+        $family = strtolower($family);
+
+        // Brands family only has one style
+        if ($family === 'brands') {
+            return 'brands';
+        }
+
+        // All other families default to solid
+        return 'solid';
     }
 
     public function toGraphqlFamily(?string $family = null): string
@@ -198,10 +192,25 @@ class FontAwesomeParser
         ];
     }
 
-    public function formatForGraphql(string $style, ?string $family = null): array
+    /**
+     * Format family and style for GraphQL API.
+     * If family is not provided, it will be inferred from the style.
+     * If style is not provided, it will be inferred from the family.
+     */
+    public function formatForGraphql(?string $family = null, ?string $style = null): array
     {
-        if (!$family) {
+        // If neither provided, use defaults
+        if (!$family && !$style) {
+            $family = 'classic';
+            $style = 'solid';
+        }
+        // If only style provided, infer family
+        elseif (!$family && $style) {
             $family = $this->inferFamilyFromStyle($style);
+        }
+        // If only family provided, infer style
+        elseif ($family && !$style) {
+            $style = $this->inferStyleFromFamily($family);
         }
 
         return [
