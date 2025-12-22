@@ -27,7 +27,9 @@ class FieldServiceProvider extends ServiceProvider
             collect(config('nova-fontawesome.js') ?? [])->each(function ($path) {
                 Nova::script('nova-fontawesome', asset($path));
             });
-            Nova::style('nova-fontawesome', asset('/css/fontawesome.css'));
+            collect(config('nova-fontawesome.css') ?? [])->each(function ($path) {
+                Nova::style('nova-fontawesome', asset($path));
+            });
         });
 
         $this->loadTranslations(__DIR__ . '/../resources/lang', 'nova-fontawesome', true);
