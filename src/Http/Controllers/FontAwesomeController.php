@@ -16,6 +16,72 @@ class FontAwesomeController extends Controller
     protected string $apiEndpoint = 'https://api.fontawesome.com';
 
     /**
+     * Font Awesome token endpoint.
+     */
+    protected string $tokenEndpoint = 'https://api.fontawesome.com/token';
+
+    /**
+     * Get or refresh Font Awesome API token.
+     * Tokens are cached for their TTL duration.
+     */
+    protected function getAuthToken(): ?string
+    {
+        $apiToken = config('nova-fontawesome.api_token');
+
+        if (!$apiToken) {
+            return null;
+        }
+
+        // Check cache first
+        $cacheKey = 'fa_auth_token_' . md5($apiToken);
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                ])
+                ->withToken($apiToken)
+                ->post($this->tokenEndpoint);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                // Token endpoint returns access_token and ttl
+                $accessToken = $data['access_token'] ?? null;
+                $ttl = $data['ttl'] ?? 86400; // Default to 24 hours
+
+                if ($accessToken) {
+                    // Cache with actual TTL from response
+                    Cache::put(
+                        $cacheKey,
+                        $accessToken,
+                        now()->addSeconds($ttl)
+                    );
+
+                    return $accessToken;
+                }
+            }
+
+            logger()->error('Font Awesome token exchange failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            logger()->error('Font Awesome token exchange exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
      * Search icons via the Font Awesome GraphQL API.
      */
     public function search(Request $request): JsonResponse
@@ -132,7 +198,7 @@ class FontAwesomeController extends Controller
                         family
                         style
                     }
-                    svg
+                    pathData
                 }
             }
         }
@@ -141,9 +207,9 @@ class FontAwesomeController extends Controller
         try {
             $http = Http::timeout(10);
 
-            // Add API token if configured
-            if ($apiToken = config('nova-fontawesome.api_token')) {
-                $http = $http->withToken($apiToken);
+            // Add authentication token if available
+            if ($authToken = $this->getAuthToken()) {
+                $http = $http->withToken($authToken);
             }
 
             $response = $http->post($this->apiEndpoint, [
@@ -187,8 +253,36 @@ class FontAwesomeController extends Controller
 
     /**
      * Get a single icon by name.
+     * Uses authenticated release.icon endpoint if token is available,
+     * otherwise falls back to public search endpoint.
      */
     protected function getIconByName(string $name, string $version): ?array
+    {
+        $authToken = $this->getAuthToken();
+
+        // If we have an auth token, use the authenticated release.icon endpoint
+        if ($authToken) {
+            return $this->getIconByNameAuthenticated($name, $version, $authToken);
+        }
+
+        // Otherwise, use the public search endpoint
+        $results = $this->queryFontAwesome($name, $version, 10, false);
+
+        // Find exact match by id
+        foreach ($results as $icon) {
+            if ($icon['id'] === $name) {
+                return $icon;
+            }
+        }
+
+        // If no exact match, return first result if available
+        return $results[0] ?? null;
+    }
+
+    /**
+     * Get a single icon by name using authenticated release.icon endpoint.
+     */
+    protected function getIconByNameAuthenticated(string $name, string $version, string $authToken): ?array
     {
         $graphqlQuery = <<<GRAPHQL
         query GetIcon(\$version: String!, \$name: String!) {
@@ -212,7 +306,7 @@ class FontAwesomeController extends Controller
                             family
                             style
                         }
-                        svg
+                        pathData
                     }
                 }
             }
@@ -220,29 +314,29 @@ class FontAwesomeController extends Controller
         GRAPHQL;
 
         try {
-            $http = Http::timeout(10);
-
-            // Add API token if configured
-            if ($apiToken = config('nova-fontawesome.api_token')) {
-                $http = $http->withToken($apiToken);
-            }
-
-            $response = $http->post($this->apiEndpoint, [
-                'query' => $graphqlQuery,
-                'variables' => [
-                    'version' => $version,
-                    'name' => $name,
-                ],
-            ]);
+            $response = Http::timeout(10)
+                ->withToken($authToken)
+                ->post($this->apiEndpoint, [
+                    'query' => $graphqlQuery,
+                    'variables' => [
+                        'version' => $version,
+                        'name' => $name,
+                    ],
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 return $data['data']['release']['icon'] ?? null;
             }
 
+            logger()->error('Font Awesome API error (authenticated)', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
             return null;
         } catch (\Exception $e) {
-            logger()->error('Font Awesome API exception', [
+            logger()->error('Font Awesome API exception (authenticated)', [
                 'message' => $e->getMessage(),
             ]);
 

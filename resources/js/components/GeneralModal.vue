@@ -279,13 +279,18 @@
                 const preferredOrder = ['solid', 'regular', 'brands', 'light', 'thin', 'duotone'];
 
                 for (const preferred of preferredOrder) {
-                    const svg = icon.svgs.find(s => s.familyStyle?.style === preferred);
-                    if (svg) {
-                        return svg.svg;
+                    const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
+                    if (svgData && svgData.pathData) {
+                        return `<svg viewBox="0 0 512 512"><path d="${svgData.pathData}"/></svg>`;
                     }
                 }
 
-                return icon.svgs[0].svg;
+                // Fallback to first available
+                if (icon.svgs[0] && icon.svgs[0].pathData) {
+                    return `<svg viewBox="0 0 512 512"><path d="${icon.svgs[0].pathData}"/></svg>`;
+                }
+
+                return '<svg viewBox="0 0 24 24"><rect fill="#ccc" width="24" height="24" rx="4"/></svg>';
             },
 
             getIconStyle(icon) {

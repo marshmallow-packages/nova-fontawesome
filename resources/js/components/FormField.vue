@@ -191,12 +191,19 @@
 
                 for (const preferred of preferredOrder) {
                     const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
-                    if (svgData) {
-                        return { svg: svgData.svg, icon };
+                    if (svgData && svgData.pathData) {
+                        const svg = `<svg viewBox="0 0 512 512"><path d="${svgData.pathData}"/></svg>`;
+                        return { svg, icon };
                     }
                 }
 
-                return { svg: icon.svgs[0].svg, icon };
+                // Fallback to first available
+                if (icon.svgs[0] && icon.svgs[0].pathData) {
+                    const svg = `<svg viewBox="0 0 512 512"><path d="${icon.svgs[0].pathData}"/></svg>`;
+                    return { svg, icon };
+                }
+
+                return null;
             },
             openModal() {
                 this.modalOpen = true;
