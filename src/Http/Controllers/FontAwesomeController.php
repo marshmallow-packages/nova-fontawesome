@@ -2,7 +2,6 @@
 
 namespace Marshmallow\NovaFontAwesome\Http\Controllers;
 
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -105,7 +104,7 @@ class FontAwesomeController extends Controller
 
                 // Token endpoint returns access_token and ttl
                 $accessToken = $data['access_token'] ?? null;
-                $ttl = $data['expires_in'] ?? 3600; // Default to 24 hours
+                $ttl = $data['expires_in'] ?? 3600;
 
                 if ($accessToken) {
                     // Cache with actual TTL from response
@@ -152,6 +151,8 @@ class FontAwesomeController extends Controller
         ]);
 
         $query = $request->input('query');
+        $family = $request->input('family');
+        $style = $request->input('style');
         $styles = $request->input('styles', []);
 
         // Create cache key for this search
@@ -159,16 +160,26 @@ class FontAwesomeController extends Controller
             $query,
             $this->faVersion,
             $this->maxResults,
+            $family,
+            $style,
             $styles,
             $this->freeOnly,
         ]));
 
         if ($this->cacheEnabled) {
-            $results = Cache::remember($cacheKey, $this->cacheDuration, function () use ($query) {
-                return $this->queryFontAwesome(query: $query);
+            $results = Cache::remember($cacheKey, $this->cacheDuration, function () use ($query, $family, $style) {
+                return $this->queryFontAwesome(
+                    query: $query,
+                    family: $family,
+                    style: $style,
+                );
             });
         } else {
-            $results = $this->queryFontAwesome(query: $query);
+            $results = $this->queryFontAwesome(
+                query: $query,
+                family: $family,
+                style: $style,
+            );
         }
 
         // Filter by styles if specified
@@ -199,10 +210,10 @@ class FontAwesomeController extends Controller
     {
         $this->setDefaultFromRequest($request);
 
-        $cacheKey = 'fa_icon_' . md5($name . $this->faVersion);
-
         $family = $request->input('family', null);
         $style = $request->input('style', null);
+
+        $cacheKey = 'fa_icon_' . md5($name . $this->faVersion . $family . $style);
 
         $icon = null;
 
@@ -216,11 +227,11 @@ class FontAwesomeController extends Controller
                 family: $family,
                 style: $style,
             );
-        }
 
-        if ($this->cacheEnabled && $icon === null) {
-            $cacheDuration = $this->cacheDuration * 24;
-            Cache::put($cacheKey, $icon, $cacheDuration);
+            if ($this->cacheEnabled && $icon !== null) {
+                $cacheDuration = $this->cacheDuration * 24;
+                Cache::put($cacheKey, $icon, $cacheDuration);
+            }
         }
 
         if (!$icon) {
@@ -245,58 +256,13 @@ class FontAwesomeController extends Controller
         ?string $family = null,
         ?string $style = null,
     ): array {
-        if (!$first) {
-            $first = $this->maxResults;
-        }
-
-        $queryVariables = [
-            'version' => $this->faVersion,
-            'query' => $query,
-            'first' => $first,
-        ];
-
-        if ($family) {
-            $queryVariables['family'] = Str::upper($family);
-        }
-        if ($style) {
-            $queryVariables['style'] = Str::upper($style);
-        }
-
-        $graphqlQuery = <<<GRAPHQL
-        query SearchIcons(\$version: String!, \$query: String!, \$first: Int, \$family: Family!, \$style: Style!) {
-            search(version: \$version, query: \$query, first: \$first) {
-                id
-                label
-                unicode
-                familyStylesByLicense {
-                    free {
-                        family
-                        style
-                    }
-                    pro {
-                        family
-                        style
-                    }
-                }
-                svgs(filter: { familyStyles: [{ family: \$family, style: \$style }] }) {
-                    familyStyle {
-                        family
-                        style
-                    }
-                    height
-                    width
-                    pathData
-                }
-            }
-        }
-        GRAPHQL;
+        [$graphqlQuery, $queryVariables] = $this->buildSearchQuery($query, $first, $family, $style);
 
         try {
             $http = Http::timeout(10);
 
-            // Add authentication token if available
             if ($this->authToken) {
-                $http->withToken($this->authToken);
+                $http = $http->withToken($this->authToken);
             }
 
             $response = $http->post($this->apiEndpoint, [
@@ -335,6 +301,76 @@ class FontAwesomeController extends Controller
     }
 
     /**
+     * Build the GraphQL search query.
+     */
+    protected function buildSearchQuery(
+        string $query,
+        ?int $first = null,
+        ?string $family = null,
+        ?string $style = null,
+    ): array {
+        if (!$first) {
+            $first = $this->maxResults;
+        }
+
+        $queryVariables = [
+            'version' => $this->faVersion,
+            'query' => $query,
+            'first' => $first,
+        ];
+
+        $withFilters = $family && $style;
+
+        if ($withFilters) {
+            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
+            $queryVariables['family'] = $formatted['family'];
+            $queryVariables['style'] = $formatted['style'];
+
+            $graphqlQuery = <<<'GRAPHQL'
+            query SearchIcons($version: String!, $query: String!, $first: Int, $family: Family!, $style: Style!) {
+                search(version: $version, query: $query, first: $first) {
+                    id
+                    label
+                    unicode
+                    familyStylesByLicense {
+                        free { family style }
+                        pro { family style }
+                    }
+                    svgs(filter: { familyStyles: [{ family: $family, style: $style }] }) {
+                        familyStyle { family style }
+                        height
+                        width
+                        pathData
+                    }
+                }
+            }
+            GRAPHQL;
+        } else {
+            $graphqlQuery = <<<'GRAPHQL'
+            query SearchIcons($version: String!, $query: String!, $first: Int) {
+                search(version: $version, query: $query, first: $first) {
+                    id
+                    label
+                    unicode
+                    familyStylesByLicense {
+                        free { family style }
+                        pro { family style }
+                    }
+                    svgs {
+                        familyStyle { family style }
+                        height
+                        width
+                        pathData
+                    }
+                }
+            }
+            GRAPHQL;
+        }
+
+        return [$graphqlQuery, $queryVariables];
+    }
+
+    /**
      * Get a single icon by name.
      * Uses authenticated release.icon endpoint if token is available,
      * otherwise falls back to public search endpoint.
@@ -344,9 +380,7 @@ class FontAwesomeController extends Controller
         ?string $family = null,
         ?string $style = null,
     ): ?array {
-
-        // If we have an auth token, use the authenticated release.icon endpoint
-
+        // Try the authenticated release.icon endpoint first
         $result = $this->queryIconByName($name, $family, $style);
         if ($result) {
             return $result;
@@ -375,59 +409,74 @@ class FontAwesomeController extends Controller
      */
     protected function queryIconByName(
         string $name,
-        ?string $family,
-        ?string $style
+        ?string $family = null,
+        ?string $style = null,
     ): ?array {
+        $hasFilter = $family && $style;
+
         $queryVariables = [
             'version' => $this->faVersion,
             'name' => $name,
         ];
 
-        if ($style) {
-            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
+        if ($hasFilter) {
+            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
             $queryVariables['family'] = $formatted['family'];
             $queryVariables['style'] = $formatted['style'];
-        }
 
-        $graphqlQuery = <<<GRAPHQL
-        query GetIcon(\$version: String!, \$name: String!, \$family: Family!, \$style: Style!) {
-            release(version: \$version) {
-                icon(name: \$name) {
-                    id
-                    label
-                    unicode
-                    familyStylesByLicense {
-                        free {
-                            family
-                            style
+            $graphqlQuery = <<<'GRAPHQL'
+            query GetIcon($version: String!, $name: String!, $family: Family!, $style: Style!) {
+                release(version: $version) {
+                    icon(name: $name) {
+                        id
+                        label
+                        unicode
+                        familyStylesByLicense {
+                            free { family style }
+                            pro { family style }
                         }
-                        pro {
-                            family
-                            style
-                            }
-                    }
-                    svgs(filter: { familyStyles: [{ family: \$family, style: \$style }] }) {
-                        familyStyle {
-                            family
-                            style
+                        svgs(filter: { familyStyles: [{ family: $family, style: $style }] }) {
+                            familyStyle { family style }
+                            height
+                            width
+                            pathData
                         }
-                        height
-                        width
-                        pathData
                     }
                 }
             }
+            GRAPHQL;
+        } else {
+            $graphqlQuery = <<<'GRAPHQL'
+            query GetIcon($version: String!, $name: String!) {
+                release(version: $version) {
+                    icon(name: $name) {
+                        id
+                        label
+                        unicode
+                        familyStylesByLicense {
+                            free { family style }
+                            pro { family style }
+                        }
+                        svgs {
+                            familyStyle { family style }
+                            height
+                            width
+                            pathData
+                        }
+                    }
+                }
+            }
+            GRAPHQL;
         }
-        GRAPHQL;
 
         try {
-            $request = Http::timeout(10);
+            $http = Http::timeout(10);
 
             if ($this->authToken) {
-                $request->withToken($this->authToken);
+                $http = $http->withToken($this->authToken);
             }
 
-            $response = $request->post($this->apiEndpoint, [
+            $response = $http->post($this->apiEndpoint, [
                 'query' => $graphqlQuery,
                 'variables' => $queryVariables,
             ]);
@@ -457,12 +506,14 @@ class FontAwesomeController extends Controller
      */
     protected function getPopularIcons(): array
     {
-        // Search for common icons users typically want
         $commonSearches = ['arrow', 'user', 'home', 'settings', 'search', 'check', 'close', 'menu'];
         $allIcons = [];
 
         foreach ($commonSearches as $term) {
-            $results = $this->queryFontAwesome($term, 5, true);
+            $results = $this->queryFontAwesome(
+                query: $term,
+                first: 5,
+            );
             $allIcons = array_merge($allIcons, $results);
             if (count($allIcons) >= $this->maxResults) {
                 break;
@@ -487,7 +538,7 @@ class FontAwesomeController extends Controller
     {
         $this->setDefaultFromRequest($request);
 
-        $cacheKey = 'fa_popular_' . md5($this->faVersion . $this->maxResults);
+        $cacheKey = 'fa_popular_' . md5($this->faVersion . $this->maxResults . ($this->freeOnly ? 'free' : 'pro'));
 
         if ($this->cacheEnabled) {
             $icons = Cache::remember($cacheKey, $this->cacheDuration * 24, function () {
@@ -501,5 +552,113 @@ class FontAwesomeController extends Controller
             'success' => true,
             'icons' => $icons,
         ]);
+    }
+
+    /**
+     * Get available FontAwesome metadata (families and styles).
+     */
+    public function metadata(Request $request): JsonResponse
+    {
+        $this->setDefaultFromRequest($request);
+
+        $cacheKey = 'fa_metadata_' . md5($this->faVersion . ($this->freeOnly ? 'free' : 'pro'));
+
+        if ($this->cacheEnabled) {
+            $metadata = Cache::remember($cacheKey, $this->cacheDuration * 24, function () {
+                return $this->getFontAwesomeMetadata();
+            });
+        } else {
+            $metadata = $this->getFontAwesomeMetadata();
+        }
+
+        return response()->json([
+            'success' => true,
+            'metadata' => $metadata,
+        ]);
+    }
+
+    /**
+     * Query FontAwesome API for metadata about available families and styles.
+     */
+    protected function getFontAwesomeMetadata(): array
+    {
+        $graphqlQuery = <<<'GRAPHQL'
+        query GetMetadata($version: String!) {
+            release(version: $version) {
+                version
+                families {
+                    id
+                    label
+                }
+                styles {
+                    id
+                    label
+                }
+            }
+        }
+        GRAPHQL;
+
+        try {
+            $http = Http::timeout(10);
+
+            if ($this->authToken) {
+                $http = $http->withToken($this->authToken);
+            }
+
+            $response = $http->post($this->apiEndpoint, [
+                'query' => $graphqlQuery,
+                'variables' => [
+                    'version' => $this->faVersion,
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $release = $data['data']['release'] ?? null;
+
+                if (!$release) {
+                    return [
+                        'families' => [],
+                        'styles' => [],
+                    ];
+                }
+
+                $families = $release['families'] ?? [];
+                $styles = $release['styles'] ?? [];
+
+                // Filter to free styles only if requested
+                if ($this->freeOnly) {
+                    $freeStyles = ['solid', 'regular', 'brands'];
+                    $styles = array_filter($styles, function ($style) use ($freeStyles) {
+                        return in_array(strtolower($style['id']), $freeStyles);
+                    });
+                    $styles = array_values($styles);
+                }
+
+                return [
+                    'families' => $families,
+                    'styles' => $styles,
+                ];
+            }
+
+            logger()->error('Font Awesome metadata API error', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'families' => [],
+                'styles' => [],
+            ];
+        } catch (\Exception $e) {
+            logger()->error('Font Awesome metadata API exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'families' => [],
+                'styles' => [],
+            ];
+        }
     }
 }

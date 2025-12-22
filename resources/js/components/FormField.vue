@@ -3,14 +3,20 @@
         <template #field>
             <div>
                 <div v-if="value" class="display-icon mb-4">
-                    <span class="relative inline-flex items-center justify-center p-3 border border-gray" style="width: 80px; height: 80px;">
+                    <span class="relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-3 border border-gray" style="width: 80px; height: 80px;">
+                        <button
+                            type="button"
+                            class="close-icon z-20 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 hover:bg-red-300 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all cursor-pointer"
+                            @click="clear"
+                            title="Clear icon"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-auto" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
                         <div v-if="isLoading" class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded" style="width: 4rem; height: 4rem;"></div>
-                        <div v-else-if="selectedIconSvg" v-html="selectedIconSvg" class="p-2 display-icon-svg fill-current text-gray-700 dark:text-gray-300"></div>
+                        <div v-else-if="selectedIconSvg" v-html="selectedIconSvg" class="p-2 display-icon-svg fill-current text-gray-700 dark:text-gray-200"></div>
                         <i v-else :class="value + ' js-icon fa-2x fa-fw'"></i>
-
-                        <span class="close-icon" @click="clear">
-                            <i class="fa fa-times-circle"></i>
-                        </span>
                     </span>
                 </div>
                 <input
@@ -21,16 +27,17 @@
                     :placeholder="field.name"
                     v-model="value"
                 />
-          <Button
-          type="button"
-          dusk="open-modal-button"
-          state="default"
-          variant="solid"
-          :disabled="modalOpen"
-          :loading="modalOpen"
-          :label="addButtonText"
-          @click.prevent="openModal"
-        />
+
+                <Button
+                    type="button"
+                    dusk="open-modal-button"
+                    state="default"
+                    variant="solid"
+                    :disabled="modalOpen"
+                    :loading="modalOpen"
+                    :label="addButtonText"
+                    @click.prevent="openModal"
+                />
 
                 <GeneralModal
                     class="fontawesome-modal max-w-4xl"
@@ -390,10 +397,6 @@
 
     .close-icon:hover {
         opacity: 1;
-    }
-
-    .close-icon i {
-        font-size: 1.5rem !important;
     }
 
     .svg-inline--fa.fa-w-20 {
