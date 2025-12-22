@@ -290,20 +290,21 @@
                 for (const preferred of preferredOrder) {
                     const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
                     if (svgData && svgData.pathData) {
-                        return this.buildSvgFromPath(svgData.pathData, svgData.familyStyle?.style);
+                        return this.buildSvgFromPath(svgData);
                     }
                 }
 
                 // Fallback to first available
                 if (icon.svgs[0] && icon.svgs[0].pathData) {
-                    return this.buildSvgFromPath(icon.svgs[0].pathData, icon.svgs[0].familyStyle?.style);
+                    return this.buildSvgFromPath(icon.svgs[0]);
                 }
 
                 return '<svg viewBox="0 0 512 512"></svg>';
             },
 
-              buildSvgFromPath(svgData) {
+            buildSvgFromPath(svgData) {
                 const style = svgData.familyStyle?.style || 'regular';
+                const family = svgData.familyStyle?.family || 'classic';
                 const pathData = svgData.pathData;
                 const width = svgData.width || 512;
                 const height = svgData.height || 512;
