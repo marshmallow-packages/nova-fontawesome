@@ -58,18 +58,28 @@ class FontAwesomeParser
         $family = 'classic';
 
         foreach ($classes as $class) {
+            // Check shorthand prefixes first
             if (isset($this->shorthandMap[$class])) {
                 $family = $this->shorthandMap[$class]['family'];
                 continue;
             }
 
+            // Check explicit family modifiers
             if (isset($this->familyMap[$class])) {
                 $family = $this->familyMap[$class];
                 continue;
             }
 
+            // Brands style class implies brands family
             if ($class === 'fa-brands') {
                 $family = 'brands';
+            }
+
+            // Classic style classes (without explicit family modifier) imply classic family
+            // These are: fa-solid, fa-regular, fa-light, fa-thin
+            if (isset($this->styleMap[$class]) && $class !== 'fa-brands') {
+                // If we see a style class and no family modifier was found, it's classic
+                $family = 'classic';
             }
         }
 
@@ -118,6 +128,10 @@ class FontAwesomeParser
 
         // Check shorthand prefixes that imply family
         $familyImplyingShorthands = [
+            'fas' => 'classic',
+            'far' => 'classic',
+            'fal' => 'classic',
+            'fat' => 'classic',
             'fad' => 'duotone',
             'fab' => 'brands',
             'fass' => 'sharp',
@@ -132,13 +146,26 @@ class FontAwesomeParser
                 return $familyImplyingShorthands[$class];
             }
 
-            // These style classes imply their family
-            if ($class === 'fa-brands') {
-                return 'brands';
+            // Check family modifiers
+            if ($class === 'fa-sharp') {
+                return 'sharp';
+            }
+
+            if ($class === 'fa-sharp-duotone') {
+                return 'sharp-duotone';
             }
 
             if ($class === 'fa-duotone') {
                 return 'duotone';
+            }
+
+            if ($class === 'fa-brands') {
+                return 'brands';
+            }
+
+            // Classic styles (when no family modifier is present)
+            if (in_array($class, ['fa-solid', 'fa-regular', 'fa-light', 'fa-thin'])) {
+                return 'classic';
             }
         }
 
