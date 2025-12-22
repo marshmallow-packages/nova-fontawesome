@@ -186,21 +186,18 @@
                 this.iconsChunked = [];
 
                 try {
-                    const params = new URLSearchParams({
+                    const params = {
                         query: this.filter.search,
                         version: this.field.version || '6.x',
                         first: this.field.maxResults || 50,
                         freeOnly: this.field.freeOnly !== false,
-                    });
+                    };
 
                     if (this.field.styles) {
-                        this.field.styles.forEach(style => {
-                            params.append('styles[]', style);
-                        });
+                        params.styles = this.field.styles;
                     }
 
-                    const response = await fetch(`/nova-vendor/nova-fontawesome/search?${params}`);
-                    const data = await response.json();
+                    const { data } = await Nova.request().get('/nova-vendor/nova-fontawesome/search', { params });
 
                     if (data.success) {
                         this.icons = data.icons;
@@ -216,13 +213,12 @@
 
             async loadPopularIcons() {
                 try {
-                    const params = new URLSearchParams({
+                    const params = {
                         version: this.field.version || '6.x',
                         first: 20,
-                    });
+                    };
 
-                    const response = await fetch(`/nova-vendor/nova-fontawesome/popular?${params}`);
-                    const data = await response.json();
+                    const { data } = await Nova.request().get('/nova-vendor/nova-fontawesome/popular', { params });
 
                     if (data.success) {
                         this.icons = data.icons;

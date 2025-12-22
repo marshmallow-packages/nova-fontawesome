@@ -163,24 +163,21 @@
                         return;
                     }
 
-                    const params = new URLSearchParams({
+                    const params = {
                         version: this.field.version || '6.x',
-                    });
+                    };
 
-                    const response = await fetch(`/nova-vendor/nova-fontawesome/icon/${name}?${params}`);
-
-                    // If 404, the icon doesn't exist in Font Awesome - silently ignore
-                    if (response.status === 404) {
-                        console.warn(`Icon "${name}" not found in Font Awesome API`);
-                        return;
-                    }
-
-                    const data = await response.json();
+                    const { data } = await Nova.request().get(`/nova-vendor/nova-fontawesome/icon/${name}`, { params });
 
                     if (data.success && data.icon) {
                         this.selectedIconData = this.getIconSvg(data.icon);
                     }
                 } catch (error) {
+                    // If 404, the icon doesn't exist in Font Awesome - silently ignore
+                    if (error.response && error.response.status === 404) {
+                        console.warn(`Icon "${iconClass}" not found in Font Awesome API`);
+                        return;
+                    }
                     console.error('Error fetching icon details:', error);
                 }
             },

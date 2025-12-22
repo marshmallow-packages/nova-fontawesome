@@ -18,6 +18,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | How long to cache icon search results (in seconds).
+    | Set to 0 to disable caching entirely.
     | Default: 3600 (1 hour)
     |
     */
