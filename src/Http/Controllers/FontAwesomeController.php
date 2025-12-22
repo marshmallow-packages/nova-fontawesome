@@ -32,8 +32,11 @@ class FontAwesomeController extends Controller
             return null;
         }
 
-        // Check cache first
-        $cacheKey = 'fa_auth_token_' . md5($apiToken);
+        $freeOnly = config('nova-fontawesome.free_only', true);
+        $scope = $freeOnly ? 'svg_icons_free' : 'svg_icons_pro';
+
+        // Check cache first - include scope in cache key
+        $cacheKey = 'fa_auth_token_' . md5($apiToken . $scope);
 
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
@@ -45,7 +48,9 @@ class FontAwesomeController extends Controller
                     'Content-Type' => 'application/json',
                 ])
                 ->withToken($apiToken)
-                ->post($this->tokenEndpoint);
+                ->post($this->tokenEndpoint, [
+                    'scope' => $scope,
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -69,12 +74,14 @@ class FontAwesomeController extends Controller
             logger()->error('Font Awesome token exchange failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'scope' => $scope,
             ]);
 
             return null;
         } catch (\Exception $e) {
             logger()->error('Font Awesome token exchange exception', [
                 'message' => $e->getMessage(),
+                'scope' => $scope,
             ]);
 
             return null;
