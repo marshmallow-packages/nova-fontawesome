@@ -14,7 +14,7 @@
                     <SelectControl
                         v-model:selected="filter.type"
                     >
-                        <option value="all" selected>
+                        <option value="all">
                             {{ __("novaFontawesome.selectType.placeholder") }}
                         </option>
                         <option
@@ -356,7 +356,7 @@
 <style scoped>
 .icon-box {
     width: 24%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 2 / 3;
     border: 1px solid rgb(var(--colors-gray-200));
     border-radius: 0.375rem;
     margin: 0.25rem;
