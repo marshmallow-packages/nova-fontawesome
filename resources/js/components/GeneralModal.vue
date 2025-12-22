@@ -30,7 +30,7 @@
                     <input
                         type="text"
                         id="search"
-                        class="w-full form-control form-input form-input-bordered"
+                        class="w-full form-control form-input form-control-bordered"
                         :placeholder="__('novaFontawesome.search.placeholder')"
                         v-model="filter.search"
                         @input="debouncedSearch"
