@@ -14,7 +14,7 @@
                     <SelectControl
                         v-model:selected="filter.type"
                     >
-                        <option value="all">
+                        <option value="all" selected>
                             {{ __("novaFontawesome.selectType.placeholder") }}
                         </option>
                         <option
@@ -65,16 +65,14 @@
                     <div
                         v-for="(icon, index) in chunkedIcons"
                         :key="icon.id || index"
-                        class="inner flex items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                        class="inner flex flex-col items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
-                        <div class="py-2">
-                            <div class="icon-svg-container" v-html="getIconSvg(icon)"></div>
-                            <span
-                                class="icon-name"
-                                v-html="icon.id"
-                            ></span>
-                        </div>
+                        <div class="icon-svg-container" v-html="getIconSvg(icon)"></div>
+                        <span
+                            class="icon-name"
+                            v-html="icon.id"
+                        ></span>
                     </div>
                 </div>
                 <div v-else-if="!isLoading && filter.search.length > 0 && filter.search.length >= minSearchLength" class="py-6 text-center text-md">
@@ -356,22 +354,60 @@
 </script>
 
 <style scoped>
+.icon-box {
+    width: 24%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgb(var(--colors-gray-200));
+    border-radius: 0.375rem;
+    margin: 0.25rem;
+    padding: 0.5rem;
+}
+
+.dark .icon-box {
+    border-color: rgb(var(--colors-gray-700));
+}
+
+.icon-box:hover {
+    border-color: rgb(var(--colors-primary-500));
+    color: rgb(var(--colors-primary-500));
+}
+
 .icon-svg-container {
-    display: inline-block;
-    width: 2rem;
-    height: 2rem;
-    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    flex: 1;
 }
 
 .icon-svg-container :deep(svg) {
-    width: 100%;
-    height: 100%;
+    width: 2em;
+    height: 2em;
     fill: currentColor;
 }
 
+.icon-name {
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    background: rgb(var(--colors-gray-100));
+    padding: 0.25em 0.5em;
+    border-radius: 0.25rem;
+    color: rgb(var(--colors-gray-700));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.dark .icon-name {
+    background: rgb(var(--colors-gray-700));
+    color: rgb(var(--colors-gray-300));
+}
+
 .skeleton-box {
-    width: 2rem;
-    height: 2rem;
+    width: 100%;
+    flex: 1;
     display: inline-block;
 }
 
@@ -390,5 +426,17 @@
 
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (max-width: 1279px) {
+    .icon-box {
+        width: 24%;
+    }
+}
+
+@media (max-width: 900px) {
+    .icon-box {
+        width: 49%;
+    }
 }
 </style>

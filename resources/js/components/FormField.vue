@@ -3,9 +3,9 @@
         <template #field>
             <div>
                 <div v-if="value" class="display-icon mb-4">
-                    <span class="relative inline-block p-6 border border-gray">
-                        <div v-if="selectedIconSvg" v-html="selectedIconSvg" class="js-icon fa-2x inline-block"></div>
-                        <i v-else :class="value + ' js-icon fa-2x'"></i>
+                    <span class="relative inline-flex items-center justify-center p-3 border border-gray" style="width: 80px; height: 80px;">
+                        <div v-if="selectedIconSvg" v-html="selectedIconSvg" class="display-icon-svg"></div>
+                        <i v-else :class="value + ' js-icon fa-2x fa-fw'"></i>
 
                         <span class="close-icon" @click="clear">
                             <i class="fa fa-times-circle"></i>
@@ -264,6 +264,21 @@
         font-size: 4rem;
     }
 
+    .display-icon-svg {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 4rem;
+        height: 4rem;
+        fill: rgb(var(--colors-gray-700));
+    }
+
+    .display-icon-svg :deep(svg) {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+    }
+
     .display-icon:hover .close-icon {
         display: block;
     }
@@ -331,9 +346,13 @@
 
     .icon-box {
         width: 24%;
+        aspect-ratio: 3 / 2;
         border: 1px solid rgb(var(--colors-gray-200));
         border-radius: 0.375rem;
         margin: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .dark .icon-box {
