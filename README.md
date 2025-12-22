@@ -242,6 +242,20 @@ FONTAWESOME_MAX_RESULTS=50
 FONTAWESOME_API_TOKEN=your-api-token-here
 ```
 
+### Getting a Font Awesome API Token
+
+To access Font Awesome Pro icons or improve API rate limits, you'll need an API token:
+
+1. **Create or log in to your Font Awesome account** at [fontawesome.com/account](https://fontawesome.com/account)
+2. **Navigate to API Tokens** section at [fontawesome.com/account#api-tokens](https://fontawesome.com/account#api-tokens)
+3. **Generate a new token** by clicking "Create Token"
+4. **Copy the token** and add it to your `.env` file:
+   ```env
+   FONTAWESOME_API_TOKEN=your-token-here
+   ```
+
+> **Note:** API tokens are automatically exchanged for short-lived access tokens and cached for performance. The package handles token refresh automatically.
+
 ## Displaying Icons
 
 ### Stored Value Format
