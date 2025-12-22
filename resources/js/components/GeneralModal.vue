@@ -44,11 +44,19 @@
                 @scroll="onScroll"
                 id="iconContainer"
             >
-                <div
-                    class="py-6 text-center text-md font-semibold"
-                    v-if="isLoading"
-                >
-                    {{ __("novaFontawesome.loading") }}...
+                <div v-if="isLoading">
+                    <div class="flex flex-wrap items-stretch">
+                        <div
+                            v-for="n in 20"
+                            :key="'skeleton-' + n"
+                            class="inner flex items-center justify-center text-center icon-box"
+                        >
+                            <div class="p-2 w-full">
+                                <div class="icon-svg-container skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                <span class="icon-name skeleton-text animate-pulse bg-gray-200 dark:bg-gray-700 rounded block mt-2">&nbsp;</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div
                     class="flex flex-wrap items-stretch"
@@ -60,7 +68,7 @@
                         class="inner flex items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
-                        <div class="p-2">
+                        <div class="py-2">
                             <div class="icon-svg-container" v-html="getIconSvg(icon)"></div>
                             <span
                                 class="icon-name"
@@ -69,10 +77,10 @@
                         </div>
                     </div>
                 </div>
-                <div v-else-if="!isLoading && filter.search.length >= minSearchLength" class="py-6 text-center text-md">
+                <div v-else-if="!isLoading && filter.search.length > 0 && filter.search.length >= minSearchLength" class="py-6 text-center text-md">
                     {{ __("novaFontawesome.noResults") }}
                 </div>
-                <div v-else-if="!isLoading" class="py-6 text-center text-md">
+                <div v-else-if="!isLoading && filter.search.length > 0 && filter.search.length < minSearchLength" class="py-6 text-center text-md">
                     {{ __("novaFontawesome.searchPrompt") }}
                 </div>
             </div>
@@ -169,7 +177,8 @@
             this.debouncedSearch = debounce(this.searchIcons, 300);
         },
         mounted() {
-            // Optionally load popular icons on mount
+            // Load popular icons on mount with loading state
+            this.isLoading = true;
             this.loadPopularIcons();
         },
         methods: {
@@ -226,6 +235,8 @@
                     }
                 } catch (error) {
                     console.error('Error fetching popular icons:', error);
+                } finally {
+                    this.isLoading = false;
                 }
             },
 
@@ -356,5 +367,28 @@
     width: 100%;
     height: 100%;
     fill: currentColor;
+}
+
+.skeleton-box {
+    width: 2rem;
+    height: 2rem;
+    display: inline-block;
+}
+
+.skeleton-text {
+    height: 1.25rem;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>
