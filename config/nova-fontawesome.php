@@ -33,7 +33,7 @@ return [
     | Pro icons (requires Font Awesome Pro subscription).
     |
     */
-    'free_only' => env('FONTAWESOME_FREE_ONLY', false),
+    'free_only' => env('FONTAWESOME_FREE_ONLY', true),
 
     /*
     |--------------------------------------------------------------------------
