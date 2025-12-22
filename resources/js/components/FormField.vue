@@ -3,19 +3,39 @@
         <template #field>
             <div>
                 <div v-if="value" class="display-icon mb-4">
-                    <span class="relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-3 border border-gray" style="width: 80px; height: 80px;">
+                    <span
+                        class="relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-3 border border-gray"
+                        style="width: 80px; height: 80px"
+                    >
                         <button
                             type="button"
                             class="close-icon z-20 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 hover:bg-red-300 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all cursor-pointer"
                             @click="clear"
                             title="Clear icon"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-auto" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4 mx-auto"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"
+                                />
                             </svg>
                         </button>
-                        <div v-if="isLoading" class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded" style="width: 4rem; height: 4rem;"></div>
-                        <div v-else-if="selectedIconSvg" v-html="selectedIconSvg" class="p-2 display-icon-svg fill-current text-gray-700 dark:text-gray-200"></div>
+                        <div
+                            v-if="isLoading"
+                            class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"
+                            style="width: 4rem; height: 4rem"
+                        ></div>
+                        <div
+                            v-else-if="selectedIconSvg"
+                            v-html="selectedIconSvg"
+                            class="p-2 display-icon-svg fill-current text-gray-700 dark:text-gray-200"
+                        ></div>
                         <i v-else :class="value + ' js-icon fa-2x fa-fw'"></i>
                     </span>
                 </div>
@@ -53,8 +73,39 @@
 
 <script>
     import { FormField, HandlesValidationErrors, Errors } from "laravel-nova";
-    import { Button } from 'laravel-nova-ui';
+    import { Button } from "laravel-nova-ui";
     import GeneralModal from "./GeneralModal.vue";
+
+    // Shorthand prefix mappings
+    const shorthandMap = {
+        fas: { family: "classic", style: "solid" },
+        far: { family: "classic", style: "regular" },
+        fal: { family: "classic", style: "light" },
+        fat: { family: "classic", style: "thin" },
+        fad: { family: "duotone", style: "solid" },
+        fab: { family: "brands", style: "brands" },
+        fass: { family: "sharp", style: "solid" },
+        fasr: { family: "sharp", style: "regular" },
+        fasl: { family: "sharp", style: "light" },
+        fast: { family: "sharp", style: "thin" },
+        fasds: { family: "sharp-duotone", style: "solid" },
+    };
+
+    // Style class mappings
+    const styleMap = {
+        "fa-solid": "solid",
+        "fa-regular": "regular",
+        "fa-light": "light",
+        "fa-thin": "thin",
+        "fa-brands": "brands",
+    };
+
+    // Family class mappings
+    const familyMap = {
+        "fa-sharp": "sharp",
+        "fa-duotone": "duotone",
+        "fa-sharp-duotone": "sharp-duotone",
+    };
 
     export default {
         mixins: [FormField, HandlesValidationErrors],
@@ -117,7 +168,11 @@
             // Backwards compatibility: only sort if icons array exists
             if (this.icons && this.icons.length > 0) {
                 this.icons.sort((a, b) =>
-                    a.iconName > b.iconName ? 1 : b.iconName > a.iconName ? -1 : 0
+                    a.iconName > b.iconName
+                        ? 1
+                        : b.iconName > a.iconName
+                          ? -1
+                          : 0
                 );
             }
 
@@ -135,43 +190,17 @@
             }
         },
         methods: {
+            /**
+             * Parse Font Awesome class string into family, style, and icon name.
+             */
             parseFontAwesomeClasses(classString) {
-                const classes = classString.toLowerCase().split(' ').map(c => c.trim());
+                const classes = classString
+                    .toLowerCase()
+                    .split(" ")
+                    .map((c) => c.trim());
 
-                // Default values
                 let family = null;
                 let style = null;
-
-                // Shorthand prefix mappings
-                const shorthandMap = {
-                    'fas': { family: 'classic', style: 'solid' },
-                    'far': { family: 'classic', style: 'regular' },
-                    'fal': { family: 'classic', style: 'light' },
-                    'fat': { family: 'classic', style: 'thin' },
-                    'fad': { family: 'duotone', style: 'solid' },
-                    'fab': { family: 'brands', style: 'brands' },
-                    'fass': { family: 'sharp', style: 'solid' },
-                    'fasr': { family: 'sharp', style: 'regular' },
-                    'fasl': { family: 'sharp', style: 'light' },
-                    'fast': { family: 'sharp', style: 'thin' },
-                    'fasds': { family: 'sharp-duotone', style: 'solid' },
-                };
-
-                // Style class mappings
-                const styleMap = {
-                    'fa-solid': 'solid',
-                    'fa-regular': 'regular',
-                    'fa-light': 'light',
-                    'fa-thin': 'thin',
-                    'fa-brands': 'brands',
-                };
-
-                // Family class mappings
-                const familyMap = {
-                    'fa-sharp': 'sharp',
-                    'fa-duotone': 'duotone',
-                    'fa-sharp-duotone': 'sharp-duotone',
-                };
 
                 for (const cls of classes) {
                     // Check shorthand prefixes first
@@ -191,69 +220,161 @@
                     if (styleMap[cls]) {
                         style = styleMap[cls];
                         // Brands is both family and style
-                        if (cls === 'fa-brands') {
-                            family = 'brands';
+                        if (cls === "fa-brands") {
+                            family = "brands";
                         }
                     }
                 }
 
                 // Extract icon name
-                const iconClass = classes.find(c => c.startsWith('fa-') && !styleMap[c] && !familyMap[c]);
-                const icon = iconClass ? iconClass.replace('fa-', '') : null;
+                const iconClass = classes.find(
+                    (c) => c.startsWith("fa-") && !styleMap[c] && !familyMap[c]
+                );
+                const icon = iconClass ? iconClass.replace("fa-", "") : null;
 
                 return { faFamily: family, faStyle: style, faIcon: icon };
+            },
+
+            /**
+             * Infer the family from a style.
+             * Most styles default to 'classic', except 'brands' which implies 'brands' family.
+             */
+            inferFamilyFromStyle(style) {
+                if (!style) return "classic";
+
+                if (style.toLowerCase() === "brands") {
+                    return "brands";
+                }
+
+                return "classic";
+            },
+
+            /**
+             * Infer the default style from a family.
+             * 'brands' family only has 'brands' style, all others default to 'solid'.
+             */
+            inferStyleFromFamily(family) {
+                if (!family) return "solid";
+
+                if (family.toLowerCase() === "brands") {
+                    return "brands";
+                }
+
+                return "solid";
+            },
+
+            /**
+             * Get resolved family and style, filling in defaults where needed.
+             */
+            getResolvedFamilyAndStyle(family, style) {
+                // If neither provided, use defaults
+                if (!family && !style) {
+                    return { family: "classic", style: "solid" };
+                }
+
+                // If only style provided, infer family
+                if (!family && style) {
+                    return { family: this.inferFamilyFromStyle(style), style };
+                }
+
+                // If only family provided, infer style
+                if (family && !style) {
+                    return { family, style: this.inferStyleFromFamily(family) };
+                }
+
+                return { family, style };
             },
 
             async fetchIconDetails(iconClass) {
                 try {
                     // Validate input
-                    if (!iconClass || typeof iconClass !== 'string') {
+                    if (!iconClass || typeof iconClass !== "string") {
                         return;
                     }
 
                     // Parse the Font Awesome class string
-                    const { faFamily, faStyle, faIcon } = this.parseFontAwesomeClasses(iconClass);
+                    const { faFamily, faStyle, faIcon } =
+                        this.parseFontAwesomeClasses(iconClass);
 
                     // Validation: ensure name is not empty
-                    if (!faIcon || faIcon.trim() === '') {
-                        console.warn('Invalid icon name: empty or whitespace');
+                    if (!faIcon || faIcon.trim() === "") {
+                        console.warn("Invalid icon name: empty or whitespace");
                         return;
                     }
+
+                    // Resolve family and style with defaults
+                    const { family, style } = this.getResolvedFamilyAndStyle(
+                        faFamily,
+                        faStyle
+                    );
 
                     this.isLoading = true;
 
                     const params = {
-                        family: faFamily,
-                        style: faStyle,
-                        version: this.field.version || '6.x',
+                        family,
+                        style,
+                        version: this.field.version || "6.x",
                     };
 
-                    const { data } = await Nova.request().get(`/nova-vendor/nova-fontawesome/icon/${faIcon}`, { params });
+                    const { data } = await Nova.request().get(
+                        `/nova-vendor/nova-fontawesome/icon/${faIcon}`,
+                        { params }
+                    );
 
                     if (data.success && data.icon) {
-                        this.selectedIconData = this.getIconSvg(data.icon);
+                        this.selectedIconData = this.getIconSvg(
+                            data.icon,
+                            family,
+                            style
+                        );
                     }
                 } catch (error) {
                     // If 404, the icon doesn't exist in Font Awesome - silently ignore
                     if (error.response && error.response.status === 404) {
-                        console.warn(`Icon "${iconClass}" not found in Font Awesome API`);
+                        console.warn(
+                            `Icon "${iconClass}" not found in Font Awesome API`
+                        );
                         return;
                     }
-                    console.error('Error fetching icon details:', error);
+                    console.error("Error fetching icon details:", error);
                 } finally {
                     this.isLoading = false;
                 }
             },
-            getIconSvg(icon) {
+
+            getIconSvg(icon, preferredFamily = null, preferredStyle = null) {
                 if (!icon.svgs || icon.svgs.length === 0) {
                     return null;
                 }
 
-                // Prefer solid, then regular, then first available
-                const preferredOrder = ['solid', 'regular', 'brands', 'light', 'thin', 'duotone'];
+                // If we have preferred family/style, try to find that first
+                if (preferredFamily && preferredStyle) {
+                    const exactMatch = icon.svgs.find(
+                        (s) =>
+                            s.familyStyle?.family?.toLowerCase() ===
+                                preferredFamily.toLowerCase() &&
+                            s.familyStyle?.style?.toLowerCase() ===
+                                preferredStyle.toLowerCase()
+                    );
+                    if (exactMatch && exactMatch.pathData) {
+                        return { svg: this.buildSvgFromPath(exactMatch), icon };
+                    }
+                }
+
+                // Fallback: prefer solid, then regular, then first available
+                const preferredOrder = [
+                    "solid",
+                    "regular",
+                    "brands",
+                    "light",
+                    "thin",
+                    "duotone",
+                ];
 
                 for (const preferred of preferredOrder) {
-                    const svgData = icon.svgs.find(s => s.familyStyle?.style === preferred);
+                    const svgData = icon.svgs.find(
+                        (s) => s.familyStyle?.style?.toLowerCase() === preferred
+                    );
                     if (svgData && svgData.pathData) {
                         return { svg: this.buildSvgFromPath(svgData), icon };
                     }
@@ -267,6 +388,7 @@
 
                 return null;
             },
+
             buildSvgFromPath(svgData) {
                 const style = svgData.familyStyle?.style;
                 const family = svgData.familyStyle?.family;
@@ -281,9 +403,12 @@
                 // pathData is an array
                 // For monotone: only one path (index 0)
                 // For duotone: two paths - index 0 is secondary, index 1 is primary
-                const isDuotone = style === 'duotone' && pathData.length === 2;
+                const isDuotone =
+                    (family?.toLowerCase() === "duotone" ||
+                        family?.toLowerCase() === "sharp-duotone") &&
+                    pathData.length === 2;
 
-                let paths = '';
+                let paths = "";
                 if (isDuotone) {
                     // Secondary path (lighter)
                     if (pathData[0]) {
@@ -302,23 +427,30 @@
 
                 return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
+
             openModal() {
                 this.modalOpen = true;
             },
+
             confirmModal(iconData) {
                 this.value = iconData.value;
-                this.selectedIconData = iconData.svg ? { svg: iconData.svg } : null;
+                this.selectedIconData = iconData.svg
+                    ? { svg: iconData.svg }
+                    : null;
                 this.modalOpen = false;
             },
+
             closeModal() {
                 this.modalOpen = false;
             },
+
             /*
              * Set the initial, internal value for the field.
              */
             setInitialValue() {
                 this.value = this.field.value || this.defaultIconOutput;
             },
+
             clear() {
                 if (
                     this.enforceDefaultIcon &&
@@ -333,6 +465,7 @@
                     this.selectedIconData = null;
                 }
             },
+
             /**
              * Fill the given FormData object with the field's internal value.
              */
@@ -342,6 +475,7 @@
                     this.value || this.defaultIconOutput
                 );
             },
+
             /**
              * Update the field's internal value.
              */
@@ -491,7 +625,8 @@
     }
 
     @keyframes pulse {
-        0%, 100% {
+        0%,
+        100% {
             opacity: 1;
         }
         50% {

@@ -409,31 +409,46 @@
                 return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
 
-            getIconStyle(icon) {
+            getIconFamilyStyle(icon) {
                 if (
                     !icon.familyStylesByLicense?.free ||
                     icon.familyStylesByLicense.free.length === 0
                 ) {
-                    return "solid";
+                    return { family: "classic", style: "solid" };
                 }
 
-                return icon.familyStylesByLicense.free[0].style || "solid";
+                const firstAvailable = icon.familyStylesByLicense.free[0];
+                return {
+                    family: firstAvailable.family || "classic",
+                    style: firstAvailable.style || "solid",
+                };
             },
 
             saveIcon(icon) {
-                const styleMap = {
-                    solid: "fa-solid",
-                    regular: "fa-regular",
-                    light: "fa-light",
-                    thin: "fa-thin",
-                    brands: "fa-brands",
-                    duotone: "fa-duotone",
-                };
+                const { family, style } = this.getIconFamilyStyle(icon);
 
-                const style = this.getIconStyle(icon);
-                const fa6_prefix = styleMap[style] || "fa-solid";
+                // Build the CSS class string according to FontAwesome structure
+                let classString = "";
 
-                this.value = fa6_prefix + " fa-" + icon.id;
+                // Handle different families
+                if (family === "brands") {
+                    // Brands: fa-brands (both family and style)
+                    classString = "fa-brands";
+                } else if (family === "sharp") {
+                    // Sharp: fa-sharp + style class
+                    classString = `fa-sharp fa-${style}`;
+                } else if (family === "sharp-duotone") {
+                    // Sharp Duotone: fa-sharp-duotone + style class
+                    classString = `fa-sharp-duotone fa-${style}`;
+                } else if (family === "duotone") {
+                    // Duotone: fa-duotone + style class
+                    classString = `fa-duotone fa-${style}`;
+                } else {
+                    // Classic (default): just the style class
+                    classString = `fa-${style}`;
+                }
+
+                this.value = `${classString} fa-${icon.id}`;
                 this.selectedSvg = this.getIconSvg(icon);
 
                 this.handleConfirm();

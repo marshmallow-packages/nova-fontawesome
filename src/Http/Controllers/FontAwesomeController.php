@@ -322,7 +322,7 @@ class FontAwesomeController extends Controller
         $withFilters = $family && $style;
 
         if ($withFilters) {
-            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
+            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
             $queryVariables['family'] = $formatted['family'];
             $queryVariables['style'] = $formatted['style'];
 
@@ -412,7 +412,7 @@ class FontAwesomeController extends Controller
         ?string $family = null,
         ?string $style = null,
     ): ?array {
-        $hasFilter = $family && $style;
+        $hasFilter = $family || $style;
 
         $queryVariables = [
             'version' => $this->faVersion,
@@ -420,7 +420,9 @@ class FontAwesomeController extends Controller
         ];
 
         if ($hasFilter) {
-            $formatted = FontAwesomeParser::make()->formatForGraphql($family, $style);
+            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
+
+            dd($formatted);
             $queryVariables['family'] = $formatted['family'];
             $queryVariables['style'] = $formatted['style'];
 
@@ -626,8 +628,16 @@ class FontAwesomeController extends Controller
                 $families = $release['families'] ?? [];
                 $styles = $release['styles'] ?? [];
 
-                // Filter to free styles only if requested
+                // Filter to free families and styles only if requested
                 if ($this->freeOnly) {
+                    // Free families: Classic and Brands
+                    $freeFamilies = ['classic', 'brands'];
+                    $families = array_filter($families, function ($family) use ($freeFamilies) {
+                        return in_array(strtolower($family['id']), $freeFamilies);
+                    });
+                    $families = array_values($families);
+
+                    // Free styles: Solid, Regular, and Brands
                     $freeStyles = ['solid', 'regular', 'brands'];
                     $styles = array_filter($styles, function ($style) use ($freeStyles) {
                         return in_array(strtolower($style['id']), $freeStyles);
