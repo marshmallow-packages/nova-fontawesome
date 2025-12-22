@@ -215,7 +215,6 @@
                 const width = svgData.width || 512;
                 const height = svgData.height || 512;
 
-                console.log('Building SVG from data:', svgData, 'with style:', style);
                 if (!pathData || pathData.length === 0) {
                     return `<svg viewBox="0 0 ${width} ${height}"></svg>`;
                 }

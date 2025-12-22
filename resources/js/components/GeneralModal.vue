@@ -302,9 +302,14 @@
                 return '<svg viewBox="0 0 512 512"></svg>';
             },
 
-            buildSvgFromPath(pathData, style) {
+              buildSvgFromPath(svgData) {
+                const style = svgData.familyStyle?.style || 'regular';
+                const pathData = svgData.pathData;
+                const width = svgData.width || 512;
+                const height = svgData.height || 512;
+
                 if (!pathData || pathData.length === 0) {
-                    return '<svg viewBox="0 0 512 512"></svg>';
+                    return `<svg viewBox="0 0 ${width} ${height}"></svg>`;
                 }
 
                 // pathData is an array
@@ -329,7 +334,7 @@
                     }
                 }
 
-                return `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+                return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
 
             getIconStyle(icon) {
