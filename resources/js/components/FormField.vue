@@ -128,6 +128,75 @@
             }
         },
         methods: {
+            parseFontAwesomeClasses(classString) {
+                const classes = classString.toLowerCase().split(' ').map(c => c.trim());
+
+                // Default values
+                let family = null;
+                let style = null;
+
+                // Shorthand prefix mappings
+                const shorthandMap = {
+                    'fas': { family: 'classic', style: 'solid' },
+                    'far': { family: 'classic', style: 'regular' },
+                    'fal': { family: 'classic', style: 'light' },
+                    'fat': { family: 'classic', style: 'thin' },
+                    'fad': { family: 'duotone', style: 'solid' },
+                    'fab': { family: 'brands', style: 'brands' },
+                    'fass': { family: 'sharp', style: 'solid' },
+                    'fasr': { family: 'sharp', style: 'regular' },
+                    'fasl': { family: 'sharp', style: 'light' },
+                    'fast': { family: 'sharp', style: 'thin' },
+                    'fasds': { family: 'sharp-duotone', style: 'solid' },
+                };
+
+                // Style class mappings
+                const styleMap = {
+                    'fa-solid': 'solid',
+                    'fa-regular': 'regular',
+                    'fa-light': 'light',
+                    'fa-thin': 'thin',
+                    'fa-brands': 'brands',
+                };
+
+                // Family class mappings
+                const familyMap = {
+                    'fa-sharp': 'sharp',
+                    'fa-duotone': 'duotone',
+                    'fa-sharp-duotone': 'sharp-duotone',
+                };
+
+                for (const cls of classes) {
+                    // Check shorthand prefixes first
+                    if (shorthandMap[cls]) {
+                        family = shorthandMap[cls].family;
+                        style = shorthandMap[cls].style;
+                        continue;
+                    }
+
+                    // Check family modifiers
+                    if (familyMap[cls]) {
+                        family = familyMap[cls];
+                        continue;
+                    }
+
+                    // Check style classes
+                    if (styleMap[cls]) {
+                        style = styleMap[cls];
+                        // Brands is both family and style
+                        if (cls === 'fa-brands') {
+                            family = 'brands';
+                        }
+                    }
+                }
+
+                // Extract icon name
+                const iconClass = classes.find(c => c.startsWith('fa-') && !styleMap[c] && !familyMap[c]);
+                const icon = iconClass ? iconClass.replace('fa-', '') : null;
+
+                return { faFamily: family, faStyle: style, faIcon: icon };
+            },
+
             async fetchIconDetails(iconClass) {
                 try {
                     // Validate input
@@ -135,31 +204,13 @@
                         return;
                     }
 
-                    // Extract icon name from class string (e.g., "fa-solid fa-user" -> "user")
-                    const parts = iconClass.trim().split(' ');
+                    // Parse the Font Awesome class string
+                    const { faFamily, faStyle, faIcon } = this.parseFontAwesomeClasses(iconClass);
 
-                    // Check if this looks like a valid Font Awesome class string
-                    // Must have at least one style prefix (fa-solid, fa-regular, etc.)
-                    const hasStylePrefix = parts.some(p => ['fa-solid', 'fa-regular', 'fa-light', 'fa-thin', 'fa-brands', 'fa-duotone'].includes(p));
-
-                    if (!hasStylePrefix) {
-                        // Invalid format - missing style prefix
-                        console.warn('Invalid icon format (missing style prefix):', iconClass);
-                        return;
-                    }
-
-                    const iconName = parts.find(p => p.startsWith('fa-') && !['fa-solid', 'fa-regular', 'fa-light', 'fa-thin', 'fa-brands', 'fa-duotone'].includes(p));
-
-                    if (!iconName) {
-                        // No icon name found after style prefix
-                        console.warn('Invalid icon format (no icon name found):', iconClass);
-                        return;
-                    }
-
-                    const name = iconName.replace('fa-', '');
+                    console.log('Fetching icon details for:', { faFamily, faStyle, faIcon }); // Debug log
 
                     // Validation: ensure name is not empty
-                    if (!name || name.trim() === '') {
+                    if (!faIcon || faIcon.trim() === '') {
                         console.warn('Invalid icon name: empty or whitespace');
                         return;
                     }
@@ -167,10 +218,12 @@
                     this.isLoading = true;
 
                     const params = {
+                        family: faFamily,
+                        style: faStyle,
                         version: this.field.version || '6.x',
                     };
 
-                    const { data } = await Nova.request().get(`/nova-vendor/nova-fontawesome/icon/${name}`, { params });
+                    const { data } = await Nova.request().get(`/nova-vendor/nova-fontawesome/icon/${faIcon}`, { params });
 
                     if (data.success && data.icon) {
                         this.selectedIconData = this.getIconSvg(data.icon);
@@ -210,7 +263,8 @@
                 return null;
             },
             buildSvgFromPath(svgData) {
-                const style = svgData.familyStyle?.style || 'regular';
+                const style = svgData.familyStyle?.style;
+                const family = svgData.familyStyle?.family;
                 const pathData = svgData.pathData;
                 const width = svgData.width || 512;
                 const height = svgData.height || 512;

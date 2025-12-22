@@ -2,11 +2,13 @@
 
 namespace Marshmallow\NovaFontAwesome\Http\Controllers;
 
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Marshmallow\NovaFontAwesome\Http\Support\FontAwesomeParser;
 
 class FontAwesomeController extends Controller
 {
@@ -21,6 +23,53 @@ class FontAwesomeController extends Controller
     protected string $tokenEndpoint = 'https://api.fontawesome.com/token';
 
     /**
+     * Font Awesome API authentication token.
+     */
+    protected string $authToken = '';
+
+    /**
+     * Default Font Awesome version.
+     */
+    protected string $faVersion = '6.x';
+
+    /**
+     * Whether to restrict to free icons only.
+     */
+    protected bool $freeOnly = true;
+
+    /**
+     * Maximum search results to return.
+     */
+    protected int $maxResults = 25;
+
+    /**
+     * Cache duration in seconds.
+     */
+    protected int $cacheDuration = 3600;
+
+    /**
+     * Whether caching is enabled.
+     */
+    protected bool $cacheEnabled = true;
+
+    protected function setDefaultFromRequest(Request $request): void
+    {
+        $this->cacheDuration = config('nova-fontawesome.cache_duration', 3600);
+        $this->cacheEnabled = $this->cacheDuration > 0;
+
+        $this->faVersion = $request->input('version', config('nova-fontawesome.version', '6.x'));
+        $this->freeOnly = $request->input('freeOnly', config('nova-fontawesome.free_only', true));
+        $this->maxResults = $request->input('first', config('nova-fontawesome.max_results', 25));
+
+        $this->setAuthToken();
+    }
+
+    protected function setAuthToken(): void
+    {
+        $this->authToken = $this->authToken ?: $this->getAuthToken();
+    }
+
+    /**
      * Get or refresh Font Awesome API token.
      * Tokens are cached for their TTL duration.
      */
@@ -32,8 +81,7 @@ class FontAwesomeController extends Controller
             return null;
         }
 
-        $freeOnly = config('nova-fontawesome.free_only', true);
-        $scope = $freeOnly ? 'svg_icons_free' : 'svg_icons_pro';
+        $scope = $this->freeOnly ? 'svg_icons_free' : 'svg_icons_pro';
 
         // Check cache first - include scope in cache key
         $cacheKey = 'fa_auth_token_' . md5($apiToken . $scope);
@@ -57,14 +105,14 @@ class FontAwesomeController extends Controller
 
                 // Token endpoint returns access_token and ttl
                 $accessToken = $data['access_token'] ?? null;
-                $ttl = $data['ttl'] ?? 86400; // Default to 24 hours
+                $ttl = $data['expires_in'] ?? 3600; // Default to 24 hours
 
                 if ($accessToken) {
                     // Cache with actual TTL from response
                     Cache::put(
                         $cacheKey,
                         $accessToken,
-                        now()->addSeconds($ttl)
+                        now()->addSeconds(($ttl - 100))
                     );
 
                     return $accessToken;
@@ -93,6 +141,8 @@ class FontAwesomeController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
+        $this->setDefaultFromRequest($request);
+
         $request->validate([
             'query' => 'required|string|min:1|max:100',
             'version' => 'nullable|string',
@@ -102,29 +152,23 @@ class FontAwesomeController extends Controller
         ]);
 
         $query = $request->input('query');
-        $version = $request->input('version', config('nova-fontawesome.version', '6.x'));
-        $first = $request->input('first', config('nova-fontawesome.max_results', 50));
         $styles = $request->input('styles', []);
-        $freeOnly = $request->input('freeOnly', config('nova-fontawesome.free_only', true));
 
         // Create cache key for this search
         $cacheKey = 'fa_search_' . md5(json_encode([
             $query,
-            $version,
-            $first,
+            $this->faVersion,
+            $this->maxResults,
             $styles,
-            $freeOnly,
+            $this->freeOnly,
         ]));
 
-        // Cache results (if caching is enabled)
-        $cacheDuration = config('nova-fontawesome.cache_duration', 3600);
-
-        if ($cacheDuration > 0) {
-            $results = Cache::remember($cacheKey, $cacheDuration, function () use ($query, $version, $first, $freeOnly) {
-                return $this->queryFontAwesome($query, $version, $first, $freeOnly);
+        if ($this->cacheEnabled) {
+            $results = Cache::remember($cacheKey, $this->cacheDuration, function () use ($query) {
+                return $this->queryFontAwesome(query: $query);
             });
         } else {
-            $results = $this->queryFontAwesome($query, $version, $first, $freeOnly);
+            $results = $this->queryFontAwesome(query: $query);
         }
 
         // Filter by styles if specified
@@ -153,17 +197,30 @@ class FontAwesomeController extends Controller
      */
     public function icon(Request $request, string $name): JsonResponse
     {
-        $version = $request->input('version', config('nova-fontawesome.version', '6.x'));
+        $this->setDefaultFromRequest($request);
 
-        $cacheKey = 'fa_icon_' . md5($name . $version);
-        $cacheDuration = config('nova-fontawesome.cache_duration', 3600);
+        $cacheKey = 'fa_icon_' . md5($name . $this->faVersion);
 
-        if ($cacheDuration > 0) {
-            $icon = Cache::remember($cacheKey, $cacheDuration * 24, function () use ($name, $version) {
-                return $this->getIconByName($name, $version);
-            });
-        } else {
-            $icon = $this->getIconByName($name, $version);
+        $family = $request->input('family', null);
+        $style = $request->input('style', null);
+
+        $icon = null;
+
+        if ($this->cacheEnabled) {
+            $icon = Cache::get($cacheKey);
+        }
+
+        if (!$this->cacheEnabled || $icon === null) {
+            $icon = $this->getIconByName(
+                name: $name,
+                family: $family,
+                style: $style,
+            );
+        }
+
+        if ($this->cacheEnabled && $icon === null) {
+            $cacheDuration = $this->cacheDuration * 24;
+            Cache::put($cacheKey, $icon, $cacheDuration);
         }
 
         if (!$icon) {
@@ -182,10 +239,31 @@ class FontAwesomeController extends Controller
     /**
      * Query the Font Awesome GraphQL API.
      */
-    protected function queryFontAwesome(string $query, string $version, int $first, bool $freeOnly): array
-    {
+    protected function queryFontAwesome(
+        string $query,
+        ?int $first = null,
+        ?string $family = null,
+        ?string $style = null,
+    ): array {
+        if (!$first) {
+            $first = $this->maxResults;
+        }
+
+        $queryVariables = [
+            'version' => $this->faVersion,
+            'query' => $query,
+            'first' => $first,
+        ];
+
+        if ($family) {
+            $queryVariables['family'] = Str::upper($family);
+        }
+        if ($style) {
+            $queryVariables['style'] = Str::upper($style);
+        }
+
         $graphqlQuery = <<<GRAPHQL
-        query SearchIcons(\$version: String!, \$query: String!, \$first: Int) {
+        query SearchIcons(\$version: String!, \$query: String!, \$first: Int, \$family: Family!, \$style: Style!) {
             search(version: \$version, query: \$query, first: \$first) {
                 id
                 label
@@ -200,11 +278,13 @@ class FontAwesomeController extends Controller
                         style
                     }
                 }
-                svgs {
+                svgs(filter: { familyStyles: [{ family: \$family, style: \$style }] }) {
                     familyStyle {
                         family
                         style
                     }
+                    height
+                    width
                     pathData
                 }
             }
@@ -215,17 +295,13 @@ class FontAwesomeController extends Controller
             $http = Http::timeout(10);
 
             // Add authentication token if available
-            if ($authToken = $this->getAuthToken()) {
-                $http = $http->withToken($authToken);
+            if ($this->authToken) {
+                $http->withToken($this->authToken);
             }
 
             $response = $http->post($this->apiEndpoint, [
                 'query' => $graphqlQuery,
-                'variables' => [
-                    'version' => $version,
-                    'query' => $query,
-                    'first' => $first,
-                ],
+                'variables' => $queryVariables,
             ]);
 
             if ($response->successful()) {
@@ -233,7 +309,7 @@ class FontAwesomeController extends Controller
                 $icons = $data['data']['search'] ?? [];
 
                 // Filter for free only if requested
-                if ($freeOnly) {
+                if ($this->freeOnly) {
                     $icons = array_filter($icons, function ($icon) {
                         return !empty($icon['familyStylesByLicense']['free']);
                     });
@@ -263,17 +339,25 @@ class FontAwesomeController extends Controller
      * Uses authenticated release.icon endpoint if token is available,
      * otherwise falls back to public search endpoint.
      */
-    protected function getIconByName(string $name, string $version): ?array
-    {
-        $authToken = $this->getAuthToken();
+    protected function getIconByName(
+        string $name,
+        ?string $family = null,
+        ?string $style = null,
+    ): ?array {
 
         // If we have an auth token, use the authenticated release.icon endpoint
-        if ($authToken) {
-            return $this->getIconByNameAuthenticated($name, $version, $authToken);
+
+        $result = $this->queryIconByName($name, $family, $style);
+        if ($result) {
+            return $result;
         }
 
         // Otherwise, use the public search endpoint
-        $results = $this->queryFontAwesome($name, $version, 10, false);
+        $results = $this->queryFontAwesome(
+            query: $name,
+            family: $family,
+            style: $style,
+        );
 
         // Find exact match by id
         foreach ($results as $icon) {
@@ -289,10 +373,24 @@ class FontAwesomeController extends Controller
     /**
      * Get a single icon by name using authenticated release.icon endpoint.
      */
-    protected function getIconByNameAuthenticated(string $name, string $version, string $authToken): ?array
-    {
+    protected function queryIconByName(
+        string $name,
+        ?string $family,
+        ?string $style
+    ): ?array {
+        $queryVariables = [
+            'version' => $this->faVersion,
+            'name' => $name,
+        ];
+
+        if ($style) {
+            $formatted = FontAwesomeParser::make()->formatForGraphql($style, $family);
+            $queryVariables['family'] = $formatted['family'];
+            $queryVariables['style'] = $formatted['style'];
+        }
+
         $graphqlQuery = <<<GRAPHQL
-        query GetIcon(\$version: String!, \$name: String!) {
+        query GetIcon(\$version: String!, \$name: String!, \$family: Family!, \$style: Style!) {
             release(version: \$version) {
                 icon(name: \$name) {
                     id
@@ -306,9 +404,9 @@ class FontAwesomeController extends Controller
                         pro {
                             family
                             style
-                        }
+                            }
                     }
-                    svgs {
+                    svgs(filter: { familyStyles: [{ family: \$family, style: \$style }] }) {
                         familyStyle {
                             family
                             style
@@ -323,15 +421,16 @@ class FontAwesomeController extends Controller
         GRAPHQL;
 
         try {
-            $response = Http::timeout(10)
-                ->withToken($authToken)
-                ->post($this->apiEndpoint, [
-                    'query' => $graphqlQuery,
-                    'variables' => [
-                        'version' => $version,
-                        'name' => $name,
-                    ],
-                ]);
+            $request = Http::timeout(10);
+
+            if ($this->authToken) {
+                $request->withToken($this->authToken);
+            }
+
+            $response = $request->post($this->apiEndpoint, [
+                'query' => $graphqlQuery,
+                'variables' => $queryVariables,
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -356,16 +455,16 @@ class FontAwesomeController extends Controller
     /**
      * Get popular icons helper method.
      */
-    protected function getPopularIcons(string $version, int $first): array
+    protected function getPopularIcons(): array
     {
         // Search for common icons users typically want
         $commonSearches = ['arrow', 'user', 'home', 'settings', 'search', 'check', 'close', 'menu'];
         $allIcons = [];
 
         foreach ($commonSearches as $term) {
-            $results = $this->queryFontAwesome($term, $version, 5, true);
+            $results = $this->queryFontAwesome($term, 5, true);
             $allIcons = array_merge($allIcons, $results);
-            if (count($allIcons) >= $first) {
+            if (count($allIcons) >= $this->maxResults) {
                 break;
             }
         }
@@ -378,7 +477,7 @@ class FontAwesomeController extends Controller
             }
         }
 
-        return array_slice(array_values($unique), 0, $first);
+        return array_slice(array_values($unique), 0, $this->maxResults);
     }
 
     /**
@@ -386,18 +485,16 @@ class FontAwesomeController extends Controller
      */
     public function popular(Request $request): JsonResponse
     {
-        $version = $request->input('version', config('nova-fontawesome.version', '6.x'));
-        $first = $request->input('first', 20);
+        $this->setDefaultFromRequest($request);
 
-        $cacheKey = 'fa_popular_' . md5($version . $first);
-        $cacheDuration = config('nova-fontawesome.cache_duration', 3600);
+        $cacheKey = 'fa_popular_' . md5($this->faVersion . $this->maxResults);
 
-        if ($cacheDuration > 0) {
-            $icons = Cache::remember($cacheKey, $cacheDuration * 24, function () use ($version, $first) {
-                return $this->getPopularIcons($version, $first);
+        if ($this->cacheEnabled) {
+            $icons = Cache::remember($cacheKey, $this->cacheDuration * 24, function () {
+                return $this->getPopularIcons();
             });
         } else {
-            $icons = $this->getPopularIcons($version, $first);
+            $icons = $this->getPopularIcons();
         }
 
         return response()->json([
