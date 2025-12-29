@@ -68,7 +68,7 @@
                 <div v-if="isLoading">
                     <div class="flex flex-wrap items-stretch">
                         <div
-                            v-for="n in 20"
+                            v-for="n in 24"
                             :key="'skeleton-' + n"
                             class="inner flex items-center justify-center text-center icon-box"
                         >
@@ -297,7 +297,7 @@
                 try {
                     const params = {
                         version: this.field.version || "6.x",
-                        first: 20,
+                        first: 24,
                     };
 
                     const { data } = await Nova.request().get(
@@ -487,7 +487,7 @@
 
 <style scoped>
     .icon-box {
-        width: 11%;
+        width: 12%;
         aspect-ratio: 4 / 3;
         border: 1px solid rgb(var(--colors-gray-200));
         border-radius: 0.375rem;
