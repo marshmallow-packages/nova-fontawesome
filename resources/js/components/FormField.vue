@@ -361,7 +361,7 @@
     }
 
     .icon-box {
-        width: 12%;
+        width: 11.5%;
         aspect-ratio: 3 / 2;
         border: 1px solid rgb(var(--colors-gray-200));
         border-radius: 0.375rem;
