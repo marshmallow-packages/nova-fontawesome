@@ -1,7 +1,7 @@
 <template>
     <span
-        class="fontawesome-index-icon inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
-        style="width: 2rem; height: 2rem"
+        class="fontawesome-index-icon inline-flex items-center justify-center"
+        style="width: 2.5rem; height: 2.5rem"
     >
         <div
             v-if="isLoading"
@@ -10,7 +10,7 @@
         <div
             v-else-if="iconSvg"
             v-html="iconSvg"
-            class="index-icon-svg fill-current p-0.5 text-gray-700 dark:text-gray-200 w-full h-full"
+            class="index-icon-svg fill-current text-gray-700 dark:text-gray-200 w-full h-full"
         ></div>
         <i v-else :class="field.value"></i>
     </span>
