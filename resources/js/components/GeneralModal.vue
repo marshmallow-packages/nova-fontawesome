@@ -360,14 +360,14 @@
                         (s) => s.familyStyle?.style === preferred
                     );
                     if (svgData && svgData.pathData) {
-                        return { svg: this.buildSvgFromPath(svgData), icon };
+                        return this.buildSvgFromPath(svgData);
                     }
                 }
 
                 // Fallback to first available
                 if (icon.svgs[0] && icon.svgs[0].pathData) {
                     const svgData = icon.svgs[0];
-                    return { svg: this.buildSvgFromPath(svgData), icon };
+                    return this.buildSvgFromPath(svgData);
                 }
 
                 return null;
@@ -487,7 +487,7 @@
 
 <style scoped>
     .icon-box {
-        width: 24%;
+        width: 11%;
         aspect-ratio: 4 / 3;
         border: 1px solid rgb(var(--colors-gray-200));
         border-radius: 0.375rem;
