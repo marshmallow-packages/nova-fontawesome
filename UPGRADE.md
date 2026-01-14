@@ -8,9 +8,11 @@ This is a major release with breaking changes. Please review carefully before up
 
 | Requirement | v1.x (Nova 4) | v2.x (Nova 5) |
 |-------------|---------------|---------------|
-| PHP | ^8.0 \| ^8.1 | ^8.1 \| ^8.2 \| ^8.3 |
-| Laravel Nova | ^4.0 \| ^5.0 | ^5.0 |
-| Laravel | 9.x / 10.x | 10.x / 11.x |
+| PHP | ^8.0 \| ^8.1 | ^8.2+ |
+| Laravel Nova | ^4.0 | ^5.0 |
+| Laravel | 9.x / 10.x | 11.x / 12.x |
+| Asset Bundler | Laravel Mix | Vite |
+| Font Awesome | 5.x / 6.x | 6.x / 7.x |
 
 ### Breaking Changes
 
@@ -22,111 +24,191 @@ This version only supports Laravel Nova 5. If you're still on Nova 4, please con
 composer require marshmallow/nova-fontawesome:^1.0
 ```
 
-#### 2. PHP 8.0 No Longer Supported
+#### 2. PHP 8.1 and Earlier No Longer Supported
 
-Minimum PHP version is now 8.1. Upgrade your PHP version before updating this package.
+Minimum PHP version is now 8.2. Upgrade your PHP version before updating this package.
 
-#### 3. Translations Loader Now Optional
+#### 3. Laravel Mix Replaced with Vite
 
-The `outl1ne/nova-translations-loader` package is no longer a required dependency. If you need translation support:
+The package now uses Vite instead of Laravel Mix for asset bundling. The `webpack.mix.js` file has been removed and replaced with `vite.config.js`.
 
+**Before (v1.x):**
 ```bash
-composer require outl1ne/nova-translations-loader:^5.0
+npm run dev      # Used Laravel Mix
+npm run prod     # Used Laravel Mix
 ```
 
-The package will automatically use it if installed, otherwise falls back to Laravel's built-in translation system.
-
-### New Features in v2.x
-
-#### Service Layer Architecture
-
-API logic has been extracted into a dedicated service class for better testability and maintainability.
-
-#### Fallback Icons
-
-When the Font Awesome API is unavailable, the package now provides 40 common fallback icons for graceful degradation.
-
-#### Debug Endpoint
-
-New `/nova-vendor/nova-fontawesome/debug` endpoint for troubleshooting API integration issues.
-
-#### Kit ID Support
-
-Load Pro CSS using your Font Awesome Kit ID:
-
-```php
-NovaFontAwesome::make('Icon')
-    ->kitId('your-kit-id');
+**After (v2.x):**
+```bash
+npm run dev      # Uses Vite
+npm run build    # Uses Vite
+npm run watch    # Uses Vite with --watch
 ```
 
-Or via config:
+#### 4. CSS Configuration Changed
 
+The `pro_css` configuration section has been replaced with a new `css` section that supports multiple loading strategies.
+
+**Before (v1.x config):**
 ```php
-// config/nova-fontawesome.php
 'pro_css' => [
     'kit_id' => env('FONTAWESOME_KIT_ID'),
+    'css_url' => env('FONTAWESOME_PRO_CSS_URL'),
+    'local_css' => env('FONTAWESOME_LOCAL_CSS'),
 ],
 ```
 
-#### Icon Families
-
-Configure available icon families:
-
+**After (v2.x config):**
 ```php
-NovaFontAwesome::make('Icon')
-    ->families(['classic', 'brands', 'duotone', 'sharp']);
+'css' => [
+    'strategy' => env('FONTAWESOME_CSS_STRATEGY', 'self-hosted'),
+    'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
+    'kit_id' => env('FONTAWESOME_KIT_ID'),
+    'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
+],
 ```
 
-#### Client-Side Fuzzy Search
+The package maintains backwards compatibility with the old `pro_css` config, but you should migrate to the new format.
 
-Instant local search results when API is slow:
+#### 5. Icon Class Format Updated
 
+Icons are now stored in modern FA6/FA7 format. Legacy FA5 shorthand classes are automatically converted.
+
+| Legacy Format | Modern Format |
+|--------------|---------------|
+| `fas fa-home` | `fa-solid fa-home` |
+| `far fa-user` | `fa-regular fa-user` |
+| `fab fa-github` | `fa-brands fa-github` |
+| `fal fa-star` | `fa-light fa-star` |
+| `fat fa-circle` | `fa-thin fa-circle` |
+| `fad fa-house` | `fa-duotone fa-solid fa-house` |
+
+Enable automatic conversion in config:
 ```php
-NovaFontAwesome::make('Icon')
-    ->fuzzySearch(true)
-    ->fuzzySearchThreshold(0.3);
+'convert_legacy_format' => true, // default
 ```
 
-#### IconRenderer Component
+#### 6. Modal Opens Empty (No Popular Icons)
 
-New Vue component for consistent icon rendering across your application.
+The icon picker modal now opens with an empty state and a search prompt instead of showing popular icons. Users must search to find icons.
 
-### Configuration Changes
+### New Features in v2.x
 
-New configuration options have been added. Publish the updated config file:
+#### CSS Loading Strategy
 
-```bash
-php artisan vendor:publish --tag=nova-fontawesome-config --force
+Three strategies with automatic fallback:
+
+1. **Self-hosted** (default) - Load from your server
+2. **Kit** - Use Font Awesome Kit
+3. **CDN** - Load from CDN (free icons only)
+
+```env
+FONTAWESOME_CSS_STRATEGY=self-hosted
+FONTAWESOME_CSS_PATH=/vendor/fontawesome/css/all.min.css
 ```
 
-New options:
-- `families` - Available icon families
-- `pro_css.kit_id` - Font Awesome Kit ID
-- `pro_css.css_url` - Custom Pro CSS URL
-- `pro_css.local_css` - Self-hosted CSS path
-- `fuzzy_search.enabled` - Enable/disable fuzzy search
-- `fuzzy_search.threshold` - Fuzzy search sensitivity
+#### Infinite Scroll Pagination
+
+Icons are now loaded progressively as you scroll, instead of loading all at once.
+
+#### Legacy Format Converter
+
+New `IconClassConverter` service automatically converts old FA5 class formats to modern FA6/FA7 format.
+
+#### API Error Handling
+
+Improved error handling with user-friendly messages when Font Awesome API is unavailable.
+
+#### New API Endpoints
+
+- `GET /nova-vendor/nova-fontawesome/config` - Get CSS configuration
+- `GET /nova-vendor/nova-fontawesome/convert` - Convert legacy class format
 
 ### Migration Steps
 
-1. **Check PHP version** - Ensure you're running PHP 8.1 or higher
-2. **Upgrade Nova** - Ensure you're running Nova 5.x
-3. **Update package**:
+1. **Check PHP version** - Ensure you're running PHP 8.2 or higher:
+   ```bash
+   php -v
+   ```
+
+2. **Check Laravel version** - Ensure you're running Laravel 11.x or 12.x:
+   ```bash
+   php artisan --version
+   ```
+
+3. **Upgrade Nova** - Ensure you're running Nova 5.x
+
+4. **Update package**:
    ```bash
    composer require marshmallow/nova-fontawesome:^2.0
    ```
-4. **Publish new config** (optional):
+
+5. **Update npm dependencies** (delete node_modules and package-lock.json first):
    ```bash
-   php artisan vendor:publish --tag=nova-fontawesome-config --force
+   rm -rf node_modules package-lock.json
+   npm install
    ```
-5. **Install translations loader** (if needed):
-   ```bash
-   composer require outl1ne/nova-translations-loader:^5.0
-   ```
-6. **Rebuild assets**:
+
+6. **Rebuild assets with Vite**:
    ```bash
    npm run build
    ```
+
+7. **Update config file** (if published):
+   ```bash
+   php artisan vendor:publish --tag=nova-fontawesome-config --force
+   ```
+
+8. **Update environment variables** (if using Kit or Pro):
+   ```env
+   # Old format (still works but deprecated)
+   FONTAWESOME_KIT_ID=abc123
+
+   # New format (recommended)
+   FONTAWESOME_CSS_STRATEGY=kit
+   FONTAWESOME_KIT_ID=abc123
+   ```
+
+9. **Clear caches**:
+   ```bash
+   php artisan cache:clear
+   php artisan config:clear
+   php artisan view:clear
+   ```
+
+### Configuration Migration
+
+If you have a published config file, update it with the new structure:
+
+```php
+<?php
+
+return [
+    'version' => env('FONTAWESOME_VERSION', '6.x'),
+    'cache_duration' => env('FONTAWESOME_CACHE_DURATION', 3600),
+    'free_only' => env('FONTAWESOME_FREE_ONLY', true),
+    'styles' => ['solid', 'regular', 'brands'],
+    'families' => ['classic', 'brands'],
+    'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
+    'api_token' => env('FONTAWESOME_API_TOKEN'),
+
+    // NEW: CSS loading strategy
+    'css' => [
+        'strategy' => env('FONTAWESOME_CSS_STRATEGY', 'self-hosted'),
+        'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
+        'kit_id' => env('FONTAWESOME_KIT_ID'),
+        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
+    ],
+
+    'fuzzy_search' => [
+        'enabled' => true,
+        'threshold' => 0.3,
+    ],
+
+    // NEW: Auto-convert legacy FA5 classes
+    'convert_legacy_format' => true,
+];
+```
 
 ### Need Help?
 
