@@ -116,39 +116,4 @@ return [
         'enabled' => true,
         'threshold' => 0.3, // 0-1, lower = stricter matching
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Backwards Compatibility - Legacy Configuration
-    |--------------------------------------------------------------------------
-    |
-    | These settings are kept for backwards compatibility with previous versions.
-    |
-    */
-
-    /**
-     * These are the JavaScript files that will be loaded into the Nova application.
-     * If you need to load more JS files or from a different location, you can add them here.
-     * Please make sure the files are in the public directory.
-     */
-    'js' => [
-        // '/vendor/fontawesome/all.js',
-        // add more if you need to...
-    ],
-
-    /**
-     * These are the Stylesheet files that will be loaded into the Nova application.
-     * If you need to load more Css files or from a different location, you can add them here.
-     * Please make sure the files are in the public directory.
-     */
-    'css' => [
-        // '/css/fontawesome.css',
-        // add more if you need to...
-    ],
-
-    /**
-     * If you have a Pro license, you can set this to true to load the Pro version of FontAwesome.
-     * Make sure you download the Pro version when you add the JS files to the public directory.
-     */
-    'pro' => false,
 ];

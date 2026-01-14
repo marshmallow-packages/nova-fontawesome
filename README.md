@@ -279,11 +279,6 @@ return [
         'enabled' => true,
         'threshold' => 0.3,
     ],
-
-    // Legacy configuration for backwards compatibility
-    'js' => [],
-    'css' => [],
-    'pro' => false,
 ];
 ```
 
