@@ -199,9 +199,8 @@
 
                 if (this.filter.style !== "all") {
                     filtered = filtered.filter((icon) => {
-                        const freeStyles =
-                            icon.familyStylesByLicense?.free || [];
-                        return freeStyles.some(
+                        const styles = this.getAvailableStyles(icon);
+                        return styles.some(
                             (s) => s.style === this.filter.style
                         );
                     });
@@ -209,9 +208,8 @@
 
                 if (this.filter.family !== "all") {
                     filtered = filtered.filter((icon) => {
-                        const freeStyles =
-                            icon.familyStylesByLicense?.free || [];
-                        return freeStyles.some(
+                        const styles = this.getAvailableStyles(icon);
+                        return styles.some(
                             (s) => s.family === this.filter.family
                         );
                     });
@@ -330,7 +328,7 @@
                     // Apply family/style filters to fuzzy results
                     if (this.filter.family && this.filter.family !== "all") {
                         fuzzyResults = fuzzyResults.filter((icon) => {
-                            const styles = icon.familyStylesByLicense?.free || [];
+                            const styles = this.getAvailableStyles(icon);
                             return styles.some(
                                 (s) => s.family === this.filter.family
                             );
@@ -339,7 +337,7 @@
 
                     if (this.filter.style && this.filter.style !== "all") {
                         fuzzyResults = fuzzyResults.filter((icon) => {
-                            const styles = icon.familyStylesByLicense?.free || [];
+                            const styles = this.getAvailableStyles(icon);
                             return styles.some(
                                 (s) => s.style === this.filter.style
                             );
@@ -500,15 +498,44 @@
                 return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
             },
 
+            /**
+             * Get all available styles for an icon (both free and pro if freeOnly is false)
+             */
+            getAvailableStyles(icon) {
+                const freeStyles = icon.familyStylesByLicense?.free || [];
+                const proStyles = icon.familyStylesByLicense?.pro || [];
+
+                // If freeOnly is false, include pro styles
+                if (this.field.freeOnly === false) {
+                    return [...freeStyles, ...proStyles];
+                }
+
+                return freeStyles;
+            },
+
             getIconFamilyStyle(icon) {
-                if (
-                    !icon.familyStylesByLicense?.free ||
-                    icon.familyStylesByLicense.free.length === 0
-                ) {
+                const styles = this.getAvailableStyles(icon);
+
+                if (styles.length === 0) {
                     return { family: "classic", style: "solid" };
                 }
 
-                const firstAvailable = icon.familyStylesByLicense.free[0];
+                // Prefer the currently selected style/family filter if available
+                if (this.filter.style !== "all" || this.filter.family !== "all") {
+                    const matchingStyle = styles.find(s => {
+                        const styleMatch = this.filter.style === "all" || s.style === this.filter.style;
+                        const familyMatch = this.filter.family === "all" || s.family === this.filter.family;
+                        return styleMatch && familyMatch;
+                    });
+                    if (matchingStyle) {
+                        return {
+                            family: matchingStyle.family || "classic",
+                            style: matchingStyle.style || "solid",
+                        };
+                    }
+                }
+
+                const firstAvailable = styles[0];
                 return {
                     family: firstAvailable.family || "classic",
                     style: firstAvailable.style || "solid",
