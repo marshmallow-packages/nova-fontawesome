@@ -12,40 +12,16 @@
             <div class="flex w-full gap-4">
                 <div class="flex w-1/2 gap-4">
                     <div class="w-1/2">
-                        <SelectControl v-model:selected="filter.family">
-                            <option value="all">
-                                {{
-                                    __(
-                                        "novaFontawesome.selectFamily.placeholder"
-                                    )
-                                }}
-                            </option>
-                            <option
-                                v-for="family in availableFamilies"
-                                :key="family.id"
-                                :value="family.id"
-                            >
-                                {{ family.label }}
-                            </option>
-                        </SelectControl>
+                        <SelectControl
+                            v-model="filter.family"
+                            :options="familyOptions"
+                        />
                     </div>
                     <div class="w-1/2">
-                        <SelectControl v-model:selected="filter.style">
-                            <option value="all">
-                                {{
-                                    __(
-                                        "novaFontawesome.selectStyle.placeholder"
-                                    )
-                                }}
-                            </option>
-                            <option
-                                v-for="style in availableStyles"
-                                :key="style.id"
-                                :value="style.id"
-                            >
-                                {{ style.label }}
-                            </option>
-                        </SelectControl>
+                        <SelectControl
+                            v-model="filter.style"
+                            :options="styleOptions"
+                        />
                     </div>
                 </div>
                 <div class="w-1/2">
@@ -179,6 +155,32 @@
             },
             minSearchLength() {
                 return this.field.minSearchLength || 2;
+            },
+            familyOptions() {
+                const placeholder = {
+                    value: "all",
+                    label: this.__("novaFontawesome.selectFamily.placeholder"),
+                };
+                return [
+                    placeholder,
+                    ...this.availableFamilies.map((f) => ({
+                        value: f.id,
+                        label: f.label,
+                    })),
+                ];
+            },
+            styleOptions() {
+                const placeholder = {
+                    value: "all",
+                    label: this.__("novaFontawesome.selectStyle.placeholder"),
+                };
+                return [
+                    placeholder,
+                    ...this.availableStyles.map((s) => ({
+                        value: s.id,
+                        label: s.label,
+                    })),
+                ];
             },
             filteredIcons() {
                 let filtered = this.icons;
