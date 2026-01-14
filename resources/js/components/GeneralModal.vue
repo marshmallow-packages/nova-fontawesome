@@ -575,17 +575,23 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        flex: 1;
+        height: 40px;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .icon-svg-container :deep(svg) {
-        width: 2.5em;
-        height: 2.5em;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
         fill: currentColor;
     }
 
     .icon-svg-container i {
-        font-size: 2.5em;
+        font-size: 1.75rem;
+        max-width: 100%;
+        text-align: center;
     }
 
     .icon-name {
