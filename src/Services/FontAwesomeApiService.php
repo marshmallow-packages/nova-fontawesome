@@ -112,11 +112,11 @@ class FontAwesomeApiService
      */
     protected function loadConfiguration(): void
     {
-        $this->cacheDuration = config('nova-fontawesome.cache_duration', 3600);
+        $this->cacheDuration = (int) config('nova-fontawesome.cache_duration', 3600);
         $this->cacheEnabled = $this->cacheDuration > 0;
-        $this->version = config('nova-fontawesome.version', '6.x');
-        $this->freeOnly = config('nova-fontawesome.free_only', true);
-        $this->maxResults = config('nova-fontawesome.max_results', 25);
+        $this->version = (string) config('nova-fontawesome.version', '6.x');
+        $this->freeOnly = (bool) config('nova-fontawesome.free_only', true);
+        $this->maxResults = (int) config('nova-fontawesome.max_results', 25);
     }
 
     /**
