@@ -26,16 +26,7 @@
                                 />
                             </svg>
                         </button>
-                        <div
-                            v-if="isLoading"
-                            class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded w-full h-full"
-                        ></div>
-                        <div
-                            v-else-if="selectedIconSvg"
-                            v-html="selectedIconSvg"
-                            class="p-1 display-icon-svg fill-current text-gray-700 dark:text-gray-200"
-                        ></div>
-                        <i v-else :class="value + ' js-icon fa-2x fa-fw'"></i>
+                        <i :class="value"></i>
                     </span>
                 </div>
                 <input
@@ -71,29 +62,21 @@
 </template>
 
 <script>
-    import { FormField, HandlesValidationErrors, Errors } from "laravel-nova";
+    import { FormField, HandlesValidationErrors } from "laravel-nova";
     import { Button } from "laravel-nova-ui";
     import GeneralModal from "./GeneralModal.vue";
-    import { iconMixin } from "../mixins/iconMixin.js";
 
     export default {
-        mixins: [FormField, HandlesValidationErrors, iconMixin],
+        mixins: [FormField, HandlesValidationErrors],
         props: ["resourceName", "resourceId", "field"],
         components: {
             Button,
             GeneralModal,
         },
         data: () => ({
-            isLoading: false,
-            icons: [],
             modalOpen: false,
-            defaultIconObj: {},
-            selectedIconData: null,
         }),
         computed: {
-            pro() {
-                return this.field.pro || false;
-            },
             defaultIcon() {
                 return this.field.default_icon || "";
             },
@@ -112,119 +95,17 @@
             defaultIconOutput() {
                 if (this.defaultIcon) {
                     return this.defaultIconType + " fa-" + this.defaultIcon;
-                } else {
-                    return "";
                 }
+                return "";
             },
-            selectedIconSvg() {
-                if (this.selectedIconData && this.selectedIconData.svg) {
-                    return this.selectedIconData.svg;
-                }
-                return null;
-            },
-        },
-        watch: {
-            value: {
-                immediate: true,
-                handler(newVal) {
-                    if (newVal && !this.selectedIconData) {
-                        this.fetchIconDetails(newVal);
-                    }
-                },
-            },
-        },
-        mounted() {
-            // Backwards compatibility: only sort if icons array exists
-            if (this.icons && this.icons.length > 0) {
-                this.icons.sort((a, b) =>
-                    a.iconName > b.iconName
-                        ? 1
-                        : b.iconName > a.iconName
-                          ? -1
-                          : 0
-                );
-            }
-
-            // Set default icon object
-            if (this.defaultIcon && this.defaultIconType) {
-                let i = this.icons.filter(
-                    (icon) =>
-                        icon.prefix === this.defaultIconType &&
-                        icon.iconName === this.defaultIcon
-                );
-
-                if (i[0]) {
-                    this.defaultIconObj = i[0];
-                }
-            }
         },
         methods: {
-            async fetchIconDetails(iconClass) {
-                try {
-                    // Validate input
-                    if (!iconClass || typeof iconClass !== "string") {
-                        return;
-                    }
-
-                    // Parse the Font Awesome class string
-                    const { faFamily, faStyle, faIcon } =
-                        this.parseFontAwesomeClasses(iconClass);
-
-                    // Validation: ensure name is not empty
-                    if (!faIcon || faIcon.trim() === "") {
-                        console.warn("Invalid icon name: empty or whitespace");
-                        return;
-                    }
-
-                    // Resolve family and style with defaults
-                    const { family, style } = this.getResolvedFamilyAndStyle(
-                        faFamily,
-                        faStyle
-                    );
-
-                    this.isLoading = true;
-
-                    const params = {
-                        family,
-                        style,
-                        version: this.field.version || "6.x",
-                    };
-
-                    const { data } = await Nova.request().get(
-                        `/nova-vendor/nova-fontawesome/icon/${faIcon}`,
-                        { params }
-                    );
-
-                    if (data.success && data.icon) {
-                        this.selectedIconData = this.getIconSvg(
-                            data.icon,
-                            family,
-                            style
-                        );
-                    }
-                } catch (error) {
-                    // If 404, the icon doesn't exist in Font Awesome - silently ignore
-                    if (error.response && error.response.status === 404) {
-                        console.warn(
-                            `Icon "${iconClass}" not found in Font Awesome API`
-                        );
-                        return;
-                    }
-                    console.error("Error fetching icon details:", error);
-                } finally {
-                    this.isLoading = false;
-                }
-            },
-
             openModal() {
                 this.modalOpen = true;
             },
 
             confirmModal(iconData) {
                 this.value = iconData.value;
-                this.selectedIconData = iconData.svg
-                    ? { svg: iconData.svg }
-                    : null;
                 this.modalOpen = false;
             },
 
@@ -240,17 +121,10 @@
             },
 
             clear() {
-                if (
-                    this.enforceDefaultIcon &&
-                    this.defaultIcon &&
-                    this.defaultIconType &&
-                    this.defaultIconObj.iconName
-                ) {
+                if (this.enforceDefaultIcon && this.defaultIconOutput) {
                     this.value = this.defaultIconOutput;
-                    this.saveIcon(this.defaultIconObj);
                 } else {
                     this.value = "";
-                    this.selectedIconData = null;
                 }
             },
 
@@ -276,24 +150,29 @@
 
 <style>
     .fontawesome-modal .inner i {
-        font-size: 3rem;
+        font-size: 1.75rem;
+        max-width: 100%;
     }
 
     .display-icon i {
-        font-size: 4rem;
+        font-size: 2rem;
+        max-width: 100%;
+        max-height: 100%;
     }
 
     .display-icon-svg {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 4rem;
-        height: 4rem;
+        max-width: 100%;
+        max-height: 100%;
     }
 
     .display-icon-svg :deep(svg) {
-        width: 100%;
-        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
         fill: currentColor;
     }
 
