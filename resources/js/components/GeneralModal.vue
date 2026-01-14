@@ -71,11 +71,7 @@
                         @click="saveIcon(icon)"
                     >
                         <div class="icon-svg-container">
-                            <i
-                                v-if="icon._fuzzyMatch"
-                                :class="getIconClass(icon)"
-                            ></i>
-                            <span v-else v-html="getIconSvg(icon)"></span>
+                            <i :class="getIconClass(icon)"></i>
                         </div>
                         <span class="icon-name">{{ icon.id }}</span>
                         <span class="icon-meta">
@@ -392,13 +388,21 @@
             },
 
             getIconClass(icon) {
-                // For fuzzy search results, use FA CSS classes
+                // Build FA CSS class from icon data
                 const { family, style } = this.getIconFamilyStyle(icon);
 
+                // Handle different families
                 if (family === "brands") {
                     return `fa-brands fa-${icon.id}`;
+                } else if (family === "sharp") {
+                    return `fa-sharp fa-${style} fa-${icon.id}`;
+                } else if (family === "sharp-duotone") {
+                    return `fa-sharp-duotone fa-${style} fa-${icon.id}`;
+                } else if (family === "duotone") {
+                    return `fa-duotone fa-${style} fa-${icon.id}`;
                 }
 
+                // Classic (default): just the style class
                 return `fa-${style} fa-${icon.id}`;
             },
 

@@ -19,6 +19,9 @@ class FieldServiceProvider extends ServiceProvider
 
         Nova::serving(function (ServingNova $event) {
             Nova::script('nova-fontawesome', __DIR__ . '/../dist/js/nova-fontawesome.js');
+
+            // Load Font Awesome CSS
+            $this->loadFontAwesomeCss();
         });
 
         $this->loadTranslations();
@@ -30,6 +33,38 @@ class FieldServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../resources/lang' => lang_path('vendor/nova-fontawesome'),
         ], 'nova-fontawesome-lang');
+    }
+
+    /**
+     * Load Font Awesome CSS based on configuration.
+     */
+    protected function loadFontAwesomeCss(): void
+    {
+        $config = config('nova-fontawesome.pro_css', []);
+
+        // Option 1: Font Awesome Kit
+        if (! empty($config['kit_id'])) {
+            Nova::remoteScript('https://kit.fontawesome.com/' . $config['kit_id'] . '.js');
+
+            return;
+        }
+
+        // Option 2: Direct CSS URL (Pro or custom)
+        if (! empty($config['css_url'])) {
+            Nova::style('nova-fontawesome-pro', $config['css_url']);
+
+            return;
+        }
+
+        // Option 3: Local CSS file
+        if (! empty($config['local_css'])) {
+            Nova::style('nova-fontawesome-local', asset($config['local_css']));
+
+            return;
+        }
+
+        // Default: Load Font Awesome Free from CDN
+        Nova::style('nova-fontawesome-cdn', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
     }
 
     /**
