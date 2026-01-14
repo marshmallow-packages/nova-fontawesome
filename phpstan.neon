@@ -1,0 +1,12 @@
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - vendor
+    ignoreErrors:
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::loadTranslations\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::loadJsonTranslationsFrom\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::loadTranslationsFrom\(\)#'
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false

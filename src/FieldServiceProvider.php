@@ -7,18 +7,13 @@ use Laravel\Nova\Events\ServingNova;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
-use Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
 
 class FieldServiceProvider extends ServiceProvider
 {
-    use LoadsNovaTranslations;
-
     /**
      * Bootstrap any application services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->routes();
 
@@ -33,11 +28,51 @@ class FieldServiceProvider extends ServiceProvider
             });
         });
 
-        $this->loadTranslations(__DIR__ . '/../resources/lang', 'nova-fontawesome', true);
+        $this->loadTranslations();
 
         $this->publishes([
             __DIR__ . '/../config/nova-fontawesome.php' => config_path('nova-fontawesome.php'),
         ], 'nova-fontawesome-config');
+
+        $this->publishes([
+            __DIR__ . '/../resources/lang' => lang_path('vendor/nova-fontawesome'),
+        ], 'nova-fontawesome-lang');
+    }
+
+    /**
+     * Load translations using nova-translations-loader if available,
+     * otherwise fall back to Laravel's built-in translation loading.
+     */
+    protected function loadTranslations(): void
+    {
+        // Try to use nova-translations-loader if available
+        if (trait_exists(\Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations::class)) {
+            $this->loadNovaTranslations(__DIR__ . '/../resources/lang', 'nova-fontawesome', true);
+        } else {
+            // Fallback to Laravel's built-in JSON translations
+            $this->loadJsonTranslationsFrom(__DIR__ . '/../resources/lang');
+            $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'nova-fontawesome');
+        }
+    }
+
+    /**
+     * Load translations using nova-translations-loader.
+     * This method mimics the LoadsNovaTranslations trait behavior.
+     */
+    protected function loadNovaTranslations(string $path, string $domain, bool $override = false): void
+    {
+        if (trait_exists(\Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations::class)) {
+            // Use reflection to call the trait method if available
+            $loader = new class {
+                use \Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
+
+                public function load(string $path, string $domain, bool $override): void
+                {
+                    $this->loadTranslations($path, $domain, $override);
+                }
+            };
+            $loader->load($path, $domain, $override);
+        }
     }
 
     /**
@@ -56,10 +91,8 @@ class FieldServiceProvider extends ServiceProvider
 
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(
             __DIR__ . '/../config/nova-fontawesome.php',
