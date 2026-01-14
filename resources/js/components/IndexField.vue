@@ -31,4 +31,9 @@
     .dark .border-gray {
         border-color: rgb(var(--colors-gray-700));
     }
+
+    .fontawesome-index-icon svg {
+        width: 1rem;
+        height: 1rem;
+    }
 </style>

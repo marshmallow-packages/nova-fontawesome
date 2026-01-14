@@ -160,6 +160,11 @@
         max-height: 100%;
     }
 
+    .display-icon svg {
+        width: 2rem;
+        height: 2rem;
+    }
+
     .display-icon-svg {
         display: flex;
         align-items: center;

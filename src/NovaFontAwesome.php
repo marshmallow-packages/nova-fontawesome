@@ -21,6 +21,10 @@ class NovaFontAwesome extends Field
             $this->pro();
         }
 
+        // Apply free_only config setting
+        $freeOnly = config('nova-fontawesome.free_only', true);
+        $this->withMeta(['freeOnly' => $freeOnly]);
+
         // Load Pro CSS configuration from config
         $this->loadProCssConfig();
     }
