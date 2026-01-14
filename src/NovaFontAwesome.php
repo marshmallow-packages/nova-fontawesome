@@ -32,11 +32,11 @@ class NovaFontAwesome extends Field
     {
         $proCss = config('nova-fontawesome.pro_css', []);
 
-        if (!empty($proCss['kit_id'])) {
+        if (! empty($proCss['kit_id'])) {
             $this->kitId($proCss['kit_id']);
-        } elseif (!empty($proCss['css_url'])) {
+        } elseif (! empty($proCss['css_url'])) {
             $this->proCssUrl($proCss['css_url']);
-        } elseif (!empty($proCss['local_css'])) {
+        } elseif (! empty($proCss['local_css'])) {
             $this->proCssUrl(asset($proCss['local_css']));
         }
     }
@@ -44,14 +44,14 @@ class NovaFontAwesome extends Field
     public function pro()
     {
         return $this->withMeta([
-            'pro' => true
+            'pro' => true,
         ]);
     }
 
     public function addButtonText($text)
     {
         return $this->withMeta([
-            'add_button_text' => $text
+            'add_button_text' => $text,
         ]);
     }
 
@@ -59,21 +59,21 @@ class NovaFontAwesome extends Field
     {
         return $this->withMeta([
             'default_icon_type' => $type,
-            'default_icon' => $icon
+            'default_icon' => $icon,
         ]);
     }
 
     public function persistDefaultIcon()
     {
         return $this->withMeta([
-            'enforce_default_icon' => true
+            'enforce_default_icon' => true,
         ]);
     }
 
     public function only($icons = [])
     {
         return $this->withMeta([
-            'only' => $icons
+            'only' => $icons,
         ]);
     }
 
@@ -83,7 +83,7 @@ class NovaFontAwesome extends Field
     public function version(string $version)
     {
         return $this->withMeta([
-            'version' => $version
+            'version' => $version,
         ]);
     }
 
@@ -93,7 +93,7 @@ class NovaFontAwesome extends Field
     public function styles(array $styles)
     {
         return $this->withMeta([
-            'styles' => $styles
+            'styles' => $styles,
         ]);
     }
 
@@ -104,7 +104,7 @@ class NovaFontAwesome extends Field
     public function families(array $families)
     {
         return $this->withMeta([
-            'families' => $families
+            'families' => $families,
         ]);
     }
 
@@ -114,7 +114,7 @@ class NovaFontAwesome extends Field
     public function freeOnly()
     {
         return $this->withMeta([
-            'freeOnly' => true
+            'freeOnly' => true,
         ]);
     }
 
@@ -124,7 +124,7 @@ class NovaFontAwesome extends Field
     public function includePro()
     {
         return $this->withMeta([
-            'freeOnly' => false
+            'freeOnly' => false,
         ]);
     }
 
@@ -134,7 +134,7 @@ class NovaFontAwesome extends Field
     public function maxResults(int $max)
     {
         return $this->withMeta([
-            'maxResults' => $max
+            'maxResults' => $max,
         ]);
     }
 
@@ -144,7 +144,7 @@ class NovaFontAwesome extends Field
     public function minSearchLength(int $min)
     {
         return $this->withMeta([
-            'minSearchLength' => $min
+            'minSearchLength' => $min,
         ]);
     }
 
@@ -156,7 +156,7 @@ class NovaFontAwesome extends Field
     {
         return $this->withMeta([
             'kitId' => $kitId,
-            'proCssUrl' => "https://kit.fontawesome.com/{$kitId}.js"
+            'proCssUrl' => "https://kit.fontawesome.com/{$kitId}.js",
         ]);
     }
 
@@ -166,7 +166,7 @@ class NovaFontAwesome extends Field
     public function proCssUrl(string $url)
     {
         return $this->withMeta([
-            'proCssUrl' => $url
+            'proCssUrl' => $url,
         ]);
     }
 
@@ -176,7 +176,7 @@ class NovaFontAwesome extends Field
     public function fuzzySearch(bool $enabled = true)
     {
         return $this->withMeta([
-            'fuzzySearch' => $enabled
+            'fuzzySearch' => $enabled,
         ]);
     }
 
@@ -186,7 +186,7 @@ class NovaFontAwesome extends Field
     public function fuzzySearchThreshold(float $threshold)
     {
         return $this->withMeta([
-            'fuzzySearchThreshold' => $threshold
+            'fuzzySearchThreshold' => $threshold,
         ]);
     }
 }

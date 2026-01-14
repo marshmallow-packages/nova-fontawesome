@@ -36,9 +36,9 @@ class FontAwesomeParser
         protected ?string $classString = null
     ) {}
 
-    public static function make(?string $classString = null): static
+    public static function make(?string $classString = null): self
     {
-        return new static($classString);
+        return new self($classString);
     }
 
     public function parse(?string $classString = null): array
@@ -63,6 +63,7 @@ class FontAwesomeParser
             if (isset($this->shorthandMap[$class])) {
                 $family = $this->shorthandMap[$class]['family'];
                 $foundExplicitFamily = true;
+
                 continue;
             }
 
@@ -70,6 +71,7 @@ class FontAwesomeParser
             if (isset($this->familyMap[$class])) {
                 $family = $this->familyMap[$class];
                 $foundExplicitFamily = true;
+
                 continue;
             }
 
@@ -91,6 +93,7 @@ class FontAwesomeParser
         foreach ($classes as $class) {
             if (isset($this->shorthandMap[$class])) {
                 $style = $this->shorthandMap[$class]['style'];
+
                 continue;
             }
 
@@ -109,8 +112,8 @@ class FontAwesomeParser
         foreach ($classes as $class) {
             if (
                 str_starts_with($class, 'fa-') &&
-                !isset($this->styleMap[$class]) &&
-                !isset($this->familyMap[$class])
+                ! isset($this->styleMap[$class]) &&
+                ! isset($this->familyMap[$class])
             ) {
                 return str_replace('fa-', '', $class);
             }
@@ -200,16 +203,14 @@ class FontAwesomeParser
     public function formatForGraphql(?string $family = null, ?string $style = null): array
     {
         // If neither provided, use defaults
-        if (!$family && !$style) {
+        if ($family === null && $style === null) {
             $family = 'classic';
             $style = 'solid';
-        }
-        // If only style provided, infer family
-        elseif (!$family && $style) {
+        } elseif ($family === null) {
+            // If only style provided, infer family
             $family = $this->inferFamilyFromStyle($style);
-        }
-        // If only family provided, infer style
-        elseif ($family && !$style) {
+        } elseif ($style === null) {
+            // If only family provided, infer style
             $style = $this->inferStyleFromFamily($family);
         }
 

@@ -3,8 +3,8 @@
 namespace Marshmallow\NovaFontAwesome\Services;
 
 use Exception;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Marshmallow\NovaFontAwesome\Http\Support\FontAwesomeParser;
 
@@ -143,7 +143,7 @@ class FontAwesomeApiService
     {
         $apiToken = config('nova-fontawesome.api_token');
 
-        if (!$apiToken) {
+        if (! $apiToken) {
             return null;
         }
 
@@ -210,7 +210,7 @@ class FontAwesomeApiService
         try {
             $results = $this->executeSearchQuery($query, $family, $style);
 
-            if ($this->cacheEnabled && !empty($results)) {
+            if ($this->cacheEnabled && ! empty($results)) {
                 Cache::put($cacheKey, $results, $this->cacheDuration);
             }
 
@@ -242,7 +242,7 @@ class FontAwesomeApiService
             'variables' => $variables,
         ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             throw new Exception('GraphQL request failed: ' . $response->status());
         }
 
@@ -256,7 +256,7 @@ class FontAwesomeApiService
 
         if ($this->freeOnly) {
             $icons = array_values(array_filter($icons, function ($icon) {
-                return !empty($icon['familyStylesByLicense']['free']);
+                return ! empty($icon['familyStylesByLicense']['free']);
             }));
         }
 
@@ -344,7 +344,7 @@ class FontAwesomeApiService
         try {
             $icon = $this->executeIconQuery($name, $family, $style);
 
-            if (!$icon) {
+            if (! $icon) {
                 // Fallback to search
                 $results = $this->search($name, $family, $style);
                 foreach ($results as $result) {
@@ -442,11 +442,12 @@ class FontAwesomeApiService
             'variables' => $variables,
         ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             return null;
         }
 
         $data = $response->json();
+
         return $data['data']['release']['icon'] ?? null;
     }
 
@@ -480,14 +481,14 @@ class FontAwesomeApiService
             // Remove duplicates
             $unique = [];
             foreach ($allIcons as $icon) {
-                if (!isset($unique[$icon['id']])) {
+                if (! isset($unique[$icon['id']])) {
                     $unique[$icon['id']] = $icon;
                 }
             }
 
             $icons = array_slice(array_values($unique), 0, $this->maxResults);
 
-            if ($this->cacheEnabled && !empty($icons)) {
+            if ($this->cacheEnabled && ! empty($icons)) {
                 Cache::put($cacheKey, $icons, $this->cacheDuration * 24);
             }
 
@@ -536,27 +537,26 @@ class FontAwesomeApiService
                 'variables' => ['version' => $this->version],
             ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 throw new Exception('Metadata request failed');
             }
 
             $data = $response->json();
             $release = $data['data']['release'] ?? null;
 
-            if (!$release) {
+            if (! $release) {
                 return $this->getDefaultMetadata();
             }
 
             $families = $release['families'] ?? [];
             $styles = $release['styles'] ?? [];
 
-            if ($this->freeOnly) {
-                $freeFamilies = ['classic', 'brands'];
-                $families = array_values(array_filter($families, fn($f) => in_array(strtolower($f['id']), $freeFamilies)));
+            // Filter by configured families and styles from config
+            $configuredFamilies = config('nova-fontawesome.families', ['classic', 'brands']);
+            $configuredStyles = config('nova-fontawesome.styles', ['solid', 'regular', 'brands']);
 
-                $freeStyles = ['solid', 'regular', 'brands'];
-                $styles = array_values(array_filter($styles, fn($s) => in_array(strtolower($s['id']), $freeStyles)));
-            }
+            $families = array_values(array_filter($families, fn ($f) => in_array(strtolower($f['id']), $configuredFamilies)));
+            $styles = array_values(array_filter($styles, fn ($s) => in_array(strtolower($s['id']), $configuredStyles)));
 
             $metadata = [
                 'families' => $families,
@@ -582,16 +582,39 @@ class FontAwesomeApiService
      */
     protected function getDefaultMetadata(): array
     {
+        $configuredFamilies = config('nova-fontawesome.families', ['classic', 'brands']);
+        $configuredStyles = config('nova-fontawesome.styles', ['solid', 'regular', 'brands']);
+
+        $familyLabels = [
+            'classic' => 'Classic',
+            'brands' => 'Brands',
+            'duotone' => 'Duotone',
+            'sharp' => 'Sharp',
+            'sharp-duotone' => 'Sharp Duotone',
+        ];
+
+        $styleLabels = [
+            'solid' => 'Solid',
+            'regular' => 'Regular',
+            'light' => 'Light',
+            'thin' => 'Thin',
+            'duotone' => 'Duotone',
+            'brands' => 'Brands',
+        ];
+
+        $families = array_map(fn ($id) => [
+            'id' => $id,
+            'label' => $familyLabels[$id] ?? ucfirst($id),
+        ], $configuredFamilies);
+
+        $styles = array_map(fn ($id) => [
+            'id' => $id,
+            'label' => $styleLabels[$id] ?? ucfirst($id),
+        ], $configuredStyles);
+
         return [
-            'families' => [
-                ['id' => 'classic', 'label' => 'Classic'],
-                ['id' => 'brands', 'label' => 'Brands'],
-            ],
-            'styles' => [
-                ['id' => 'solid', 'label' => 'Solid'],
-                ['id' => 'regular', 'label' => 'Regular'],
-                ['id' => 'brands', 'label' => 'Brands'],
-            ],
+            'families' => $families,
+            'styles' => $styles,
         ];
     }
 
@@ -606,7 +629,7 @@ class FontAwesomeApiService
             'freeOnly' => $this->freeOnly,
             'cacheEnabled' => $this->cacheEnabled,
             'cacheDuration' => $this->cacheDuration,
-            'hasApiToken' => !empty(config('nova-fontawesome.api_token')),
+            'hasApiToken' => ! empty(config('nova-fontawesome.api_token')),
             'tests' => [],
         ];
 
@@ -625,7 +648,7 @@ class FontAwesomeApiService
         $results['tests']['cache'] = $this->testCache();
 
         // Overall status
-        $results['status'] = collect($results['tests'])->every(fn($t) => $t['success']) ? 'healthy' : 'degraded';
+        $results['status'] = collect($results['tests'])->every(fn ($t) => $t['success']) ? 'healthy' : 'degraded';
 
         return $results;
     }
@@ -677,6 +700,7 @@ class FontAwesomeApiService
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'success' => true,
                     'message' => 'Token exchange successful',
@@ -731,7 +755,7 @@ class FontAwesomeApiService
      */
     protected function testCache(): array
     {
-        if (!$this->cacheEnabled) {
+        if (! $this->cacheEnabled) {
             return [
                 'success' => true,
                 'message' => 'Cache is disabled',
@@ -802,7 +826,7 @@ class FontAwesomeApiService
      */
     protected function formatFallbackIcons(array $icons): array
     {
-        return array_map(fn($icon) => $this->formatFallbackIcon($icon), $icons);
+        return array_map(fn ($icon) => $this->formatFallbackIcon($icon), $icons);
     }
 
     /**
@@ -873,7 +897,7 @@ class FontAwesomeApiService
             'maxResults' => $this->maxResults,
             'cacheDuration' => $this->cacheDuration,
             'cacheEnabled' => $this->cacheEnabled,
-            'hasAuthToken' => !empty($this->authToken),
+            'hasAuthToken' => ! empty($this->authToken),
         ];
     }
 }

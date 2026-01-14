@@ -2,10 +2,10 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests\Unit;
 
-use Marshmallow\NovaFontAwesome\Tests\TestCase;
-use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
+use Marshmallow\NovaFontAwesome\Tests\TestCase;
 
 class FontAwesomeApiServiceTest extends TestCase
 {
@@ -14,7 +14,7 @@ class FontAwesomeApiServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new FontAwesomeApiService();
+        $this->service = new FontAwesomeApiService;
     }
 
     /** @test */

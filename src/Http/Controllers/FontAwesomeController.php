@@ -2,8 +2,8 @@
 
 namespace Marshmallow\NovaFontAwesome\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
 
@@ -27,9 +27,16 @@ class FontAwesomeController extends Controller
      */
     protected function configureServiceFromRequest(Request $request): void
     {
+        $freeOnly = $request->input('freeOnly', config('nova-fontawesome.free_only', true));
+
+        // Convert string boolean to actual boolean
+        if (is_string($freeOnly)) {
+            $freeOnly = filter_var($freeOnly, FILTER_VALIDATE_BOOLEAN);
+        }
+
         $this->apiService->configure([
             'version' => $request->input('version', config('nova-fontawesome.version', '6.x')),
-            'freeOnly' => $request->input('freeOnly', config('nova-fontawesome.free_only', true)),
+            'freeOnly' => $freeOnly,
             'maxResults' => $request->input('first', config('nova-fontawesome.max_results', 25)),
         ]);
     }
@@ -44,7 +51,7 @@ class FontAwesomeController extends Controller
             'version' => 'nullable|string',
             'first' => 'nullable|integer|min:1|max:100',
             'styles' => 'nullable|array',
-            'freeOnly' => 'nullable|boolean',
+            'freeOnly' => 'nullable',
         ]);
 
         $this->configureServiceFromRequest($request);
@@ -57,7 +64,7 @@ class FontAwesomeController extends Controller
         $results = $this->apiService->search($query, $family, $style);
 
         // Filter by styles if specified
-        if (!empty($styles)) {
+        if (! empty($styles)) {
             $results = array_filter($results, function ($icon) use ($styles) {
                 foreach ($icon['familyStylesByLicense'] ?? [] as $license => $licenseStyles) {
                     foreach ($licenseStyles as $styleData) {
@@ -66,6 +73,7 @@ class FontAwesomeController extends Controller
                         }
                     }
                 }
+
                 return false;
             });
             $results = array_values($results);
@@ -89,7 +97,7 @@ class FontAwesomeController extends Controller
 
         $icon = $this->apiService->getIcon($name, $family, $style);
 
-        if (!$icon) {
+        if (! $icon) {
             return response()->json([
                 'success' => false,
                 'message' => 'Icon not found',

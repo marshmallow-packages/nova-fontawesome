@@ -2,8 +2,8 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests\Unit;
 
-use Marshmallow\NovaFontAwesome\Tests\TestCase;
 use Marshmallow\NovaFontAwesome\NovaFontAwesome;
+use Marshmallow\NovaFontAwesome\Tests\TestCase;
 
 class NovaFontAwesomeFieldTest extends TestCase
 {

@@ -2,8 +2,8 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests;
 
-use Orchestra\Testbench\TestCase as Orchestra;
 use Marshmallow\NovaFontAwesome\FieldServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {

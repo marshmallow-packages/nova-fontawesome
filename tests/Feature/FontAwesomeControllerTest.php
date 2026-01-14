@@ -2,8 +2,8 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests\Feature;
 
-use Marshmallow\NovaFontAwesome\Tests\TestCase;
 use Illuminate\Support\Facades\Http;
+use Marshmallow\NovaFontAwesome\Tests\TestCase;
 
 class FontAwesomeControllerTest extends TestCase
 {

@@ -2,10 +2,10 @@
 
 namespace Marshmallow\NovaFontAwesome;
 
-use Laravel\Nova\Nova;
-use Laravel\Nova\Events\ServingNova;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Nova\Events\ServingNova;
+use Laravel\Nova\Nova;
 use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
 
 class FieldServiceProvider extends ServiceProvider
@@ -55,29 +55,26 @@ class FieldServiceProvider extends ServiceProvider
     protected function loadNovaTranslationsViaTrait(): void
     {
         $path = __DIR__ . '/../resources/lang';
-        $domain = 'nova-fontawesome';
 
-        // Register translations with Nova directly (what the trait does internally)
-        if (method_exists(Nova::class, 'translations')) {
-            Nova::serving(function () use ($path, $domain) {
-                $locale = app()->getLocale();
-                $fallbackLocale = config('app.fallback_locale');
+        // Register translations with Nova directly
+        Nova::serving(function () use ($path) {
+            $locale = app()->getLocale();
+            $fallbackLocale = config('app.fallback_locale');
 
-                // Try to load the translation file
-                foreach ([$locale, $fallbackLocale, 'en'] as $tryLocale) {
-                    $file = "{$path}/{$tryLocale}.json";
-                    if (file_exists($file)) {
-                        $translations = json_decode(file_get_contents($file), true) ?? [];
-                        Nova::translations($translations);
-                        break;
-                    }
+            // Try to load the translation file
+            foreach ([$locale, $fallbackLocale, 'en'] as $tryLocale) {
+                $file = "{$path}/{$tryLocale}.json";
+                if (file_exists($file)) {
+                    $translations = json_decode(file_get_contents($file), true) ?? [];
+                    Nova::translations($translations);
+                    break;
                 }
-            });
-        }
+            }
+        });
 
         // Also load via Laravel's standard translation loading
         $this->loadJsonTranslationsFrom($path);
-        $this->loadTranslationsFrom($path, $domain);
+        $this->loadTranslationsFrom($path, 'nova-fontawesome');
     }
 
     /**
@@ -105,7 +102,7 @@ class FieldServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(FontAwesomeApiService::class, function ($app) {
-            return new FontAwesomeApiService();
+            return new FontAwesomeApiService;
         });
     }
 }

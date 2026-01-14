@@ -70,11 +70,18 @@
                         class="inner flex flex-col items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
-                        <div
-                            class="icon-svg-container"
-                            v-html="getIconSvg(icon)"
-                        ></div>
-                        <span class="icon-name" v-html="icon.id"></span>
+                        <div class="icon-svg-container">
+                            <i
+                                v-if="icon._fuzzyMatch"
+                                :class="getIconClass(icon)"
+                            ></i>
+                            <span v-else v-html="getIconSvg(icon)"></span>
+                        </div>
+                        <span class="icon-name">{{ icon.id }}</span>
+                        <span class="icon-meta">
+                            {{ getIconFamilyStyle(icon).family }} /
+                            {{ getIconFamilyStyle(icon).style }}
+                        </span>
                     </div>
                 </div>
                 <div
@@ -275,15 +282,25 @@
                 this.isLoading = true;
                 this.chunk = 0;
                 this.iconsChunked = [];
-                this.useLocalFallback = false;
 
-                // Start local fuzzy search immediately for instant feedback
+                // Use fuzzy search as primary search method
                 if (this.fuzzySearchEnabled) {
-                    this.fuzzyResults = fuzzySearchIcons(this.filter.search, {
+                    const fuzzyResults = fuzzySearchIcons(this.filter.search, {
                         threshold: this.fuzzySearchThreshold,
                         maxResults: this.field.maxResults || 50,
                     });
+
+                    if (fuzzyResults.length > 0) {
+                        this.icons = fuzzyResults;
+                        this.useLocalFallback = true;
+                        this.getChunk();
+                        this.isLoading = false;
+                        return;
+                    }
                 }
+
+                // Fallback to API if fuzzy search has no results
+                this.useLocalFallback = false;
 
                 try {
                     const params = {
@@ -304,25 +321,13 @@
 
                     if (data.success && data.icons.length > 0) {
                         this.icons = data.icons;
-                        this.useLocalFallback = false;
-                    } else if (this.fuzzySearchEnabled && this.fuzzyResults.length > 0) {
-                        // Use fuzzy results if API returned nothing
-                        this.icons = this.fuzzyResults;
-                        this.useLocalFallback = true;
                     } else {
                         this.icons = [];
                     }
                     this.getChunk();
                 } catch (error) {
                     console.error("Error searching icons:", error);
-                    // Fallback to fuzzy search results on API error
-                    if (this.fuzzySearchEnabled && this.fuzzyResults.length > 0) {
-                        this.icons = this.fuzzyResults;
-                        this.useLocalFallback = true;
-                        this.getChunk();
-                    } else {
-                        this.icons = [];
-                    }
+                    this.icons = [];
                 } finally {
                     this.isLoading = false;
                 }
@@ -384,6 +389,17 @@
 
                 this.expanded = false;
                 this.chunk += chunkSize;
+            },
+
+            getIconClass(icon) {
+                // For fuzzy search results, use FA CSS classes
+                const { family, style } = this.getIconFamilyStyle(icon);
+
+                if (family === "brands") {
+                    return `fa-brands fa-${icon.id}`;
+                }
+
+                return `fa-${style} fa-${icon.id}`;
             },
 
             getIconSvg(icon) {
@@ -533,12 +549,12 @@
 
 <style scoped>
     .icon-box {
-        width: 11.5%;
-        aspect-ratio: 4 / 3;
+        width: calc(16.666% - 0.5rem);
+        aspect-ratio: 1 / 1;
         border: 1px solid rgb(var(--colors-gray-200));
         border-radius: 0.375rem;
         margin: 0.25rem;
-        padding: 0.5rem;
+        padding: 0.75rem;
     }
 
     .dark .icon-box {
@@ -559,14 +575,18 @@
     }
 
     .icon-svg-container :deep(svg) {
-        width: 2em;
-        height: 2em;
+        width: 2.5em;
+        height: 2.5em;
         fill: currentColor;
+    }
+
+    .icon-svg-container i {
+        font-size: 2.5em;
     }
 
     .icon-name {
         display: block;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         margin-top: 0.5rem;
         background: rgb(var(--colors-gray-100));
         padding: 0.25em 0.5em;
@@ -578,9 +598,24 @@
         max-width: 100%;
     }
 
+    .icon-meta {
+        display: block;
+        font-size: 0.6rem;
+        margin-top: 0.25rem;
+        color: rgb(var(--colors-gray-500));
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
     .dark .icon-name {
         background: rgb(var(--colors-gray-700));
         color: rgb(var(--colors-gray-300));
+    }
+
+    .dark .icon-meta {
+        color: rgb(var(--colors-gray-400));
     }
 
     .skeleton-box {
@@ -609,13 +644,13 @@
 
     @media (max-width: 1279px) {
         .icon-box {
-            width: 24%;
+            width: calc(25% - 0.5rem);
         }
     }
 
     @media (max-width: 900px) {
         .icon-box {
-            width: 49%;
+            width: calc(50% - 0.5rem);
         }
     }
 </style>
