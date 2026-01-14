@@ -278,27 +278,10 @@
                 this.isLoading = true;
                 this.chunk = 0;
                 this.iconsChunked = [];
-
-                // Use fuzzy search as primary search method
-                if (this.fuzzySearchEnabled) {
-                    const fuzzyResults = fuzzySearchIcons(this.filter.search, {
-                        threshold: this.fuzzySearchThreshold,
-                        maxResults: this.field.maxResults || 50,
-                    });
-
-                    if (fuzzyResults.length > 0) {
-                        this.icons = fuzzyResults;
-                        this.useLocalFallback = true;
-                        this.getChunk();
-                        this.isLoading = false;
-                        return;
-                    }
-                }
-
-                // Fallback to API if fuzzy search has no results
                 this.useLocalFallback = false;
 
                 try {
+                    // Build search params
                     const params = {
                         query: this.filter.search,
                         version: this.field.version || "6.x",
@@ -306,8 +289,14 @@
                         freeOnly: this.field.freeOnly !== false,
                     };
 
-                    if (this.field.styles) {
-                        params.styles = this.field.styles;
+                    // Add family filter if selected
+                    if (this.filter.family && this.filter.family !== "all") {
+                        params.family = this.filter.family;
+                    }
+
+                    // Add style filter if selected
+                    if (this.filter.style && this.filter.style !== "all") {
+                        params.style = this.filter.style;
                     }
 
                     const { data } = await Nova.request().get(
@@ -317,16 +306,52 @@
 
                     if (data.success && data.icons.length > 0) {
                         this.icons = data.icons;
+                        this.getChunk();
                     } else {
-                        this.icons = [];
+                        // Fallback to fuzzy search if API returns no results
+                        this.useFuzzyFallback();
                     }
-                    this.getChunk();
                 } catch (error) {
                     console.error("Error searching icons:", error);
-                    this.icons = [];
+                    // Fallback to fuzzy search on API error
+                    this.useFuzzyFallback();
                 } finally {
                     this.isLoading = false;
                 }
+            },
+
+            useFuzzyFallback() {
+                if (this.fuzzySearchEnabled) {
+                    let fuzzyResults = fuzzySearchIcons(this.filter.search, {
+                        threshold: this.fuzzySearchThreshold,
+                        maxResults: this.field.maxResults || 50,
+                    });
+
+                    // Apply family/style filters to fuzzy results
+                    if (this.filter.family && this.filter.family !== "all") {
+                        fuzzyResults = fuzzyResults.filter((icon) => {
+                            const styles = icon.familyStylesByLicense?.free || [];
+                            return styles.some(
+                                (s) => s.family === this.filter.family
+                            );
+                        });
+                    }
+
+                    if (this.filter.style && this.filter.style !== "all") {
+                        fuzzyResults = fuzzyResults.filter((icon) => {
+                            const styles = icon.familyStylesByLicense?.free || [];
+                            return styles.some(
+                                (s) => s.style === this.filter.style
+                            );
+                        });
+                    }
+
+                    this.icons = fuzzyResults;
+                    this.useLocalFallback = true;
+                } else {
+                    this.icons = [];
+                }
+                this.getChunk();
             },
 
             async loadPopularIcons() {

@@ -50,6 +50,8 @@ class FontAwesomeController extends Controller
             'query' => 'required|string|min:1|max:100',
             'version' => 'nullable|string',
             'first' => 'nullable|integer|min:1|max:100',
+            'family' => 'nullable|string',
+            'style' => 'nullable|string',
             'styles' => 'nullable|array',
             'freeOnly' => 'nullable',
         ]);
