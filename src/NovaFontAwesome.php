@@ -20,6 +20,25 @@ class NovaFontAwesome extends Field
         if (config('nova-fontawesome.pro')) {
             $this->pro();
         }
+
+        // Load Pro CSS configuration from config
+        $this->loadProCssConfig();
+    }
+
+    /**
+     * Load Pro CSS configuration from config file.
+     */
+    protected function loadProCssConfig(): void
+    {
+        $proCss = config('nova-fontawesome.pro_css', []);
+
+        if (!empty($proCss['kit_id'])) {
+            $this->kitId($proCss['kit_id']);
+        } elseif (!empty($proCss['css_url'])) {
+            $this->proCssUrl($proCss['css_url']);
+        } elseif (!empty($proCss['local_css'])) {
+            $this->proCssUrl(asset($proCss['local_css']));
+        }
     }
 
     public function pro()
@@ -79,6 +98,17 @@ class NovaFontAwesome extends Field
     }
 
     /**
+     * Set the icon families available for selection.
+     * Options: classic, brands, duotone, sharp, sharp-duotone
+     */
+    public function families(array $families)
+    {
+        return $this->withMeta([
+            'families' => $families
+        ]);
+    }
+
+    /**
      * Only show free icons.
      */
     public function freeOnly()
@@ -115,6 +145,48 @@ class NovaFontAwesome extends Field
     {
         return $this->withMeta([
             'minSearchLength' => $min
+        ]);
+    }
+
+    /**
+     * Set the Font Awesome Kit ID for loading Pro CSS.
+     * Get your Kit ID from https://fontawesome.com/kits
+     */
+    public function kitId(string $kitId)
+    {
+        return $this->withMeta([
+            'kitId' => $kitId,
+            'proCssUrl' => "https://kit.fontawesome.com/{$kitId}.js"
+        ]);
+    }
+
+    /**
+     * Set a custom Pro CSS URL.
+     */
+    public function proCssUrl(string $url)
+    {
+        return $this->withMeta([
+            'proCssUrl' => $url
+        ]);
+    }
+
+    /**
+     * Enable or disable client-side fuzzy search.
+     */
+    public function fuzzySearch(bool $enabled = true)
+    {
+        return $this->withMeta([
+            'fuzzySearch' => $enabled
+        ]);
+    }
+
+    /**
+     * Set the fuzzy search threshold (0-1, lower = stricter).
+     */
+    public function fuzzySearchThreshold(float $threshold)
+    {
+        return $this->withMeta([
+            'fuzzySearchThreshold' => $threshold
         ]);
     }
 }

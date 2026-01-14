@@ -144,4 +144,70 @@ class NovaFontAwesomeFieldTest extends TestCase
 
         $this->assertTrue($field->nullable);
     }
+
+    /** @test */
+    public function it_can_set_families(): void
+    {
+        $families = ['classic', 'brands', 'duotone'];
+        $field = NovaFontAwesome::make('Icon')->families($families);
+
+        $this->assertEquals($families, $field->meta['families']);
+    }
+
+    /** @test */
+    public function it_can_set_kit_id(): void
+    {
+        $field = NovaFontAwesome::make('Icon')->kitId('abc123def');
+
+        $this->assertEquals('abc123def', $field->meta['kitId']);
+        $this->assertEquals('https://kit.fontawesome.com/abc123def.js', $field->meta['proCssUrl']);
+    }
+
+    /** @test */
+    public function it_can_set_pro_css_url(): void
+    {
+        $url = 'https://example.com/fontawesome.css';
+        $field = NovaFontAwesome::make('Icon')->proCssUrl($url);
+
+        $this->assertEquals($url, $field->meta['proCssUrl']);
+    }
+
+    /** @test */
+    public function it_can_enable_fuzzy_search(): void
+    {
+        $field = NovaFontAwesome::make('Icon')->fuzzySearch(true);
+
+        $this->assertTrue($field->meta['fuzzySearch']);
+    }
+
+    /** @test */
+    public function it_can_disable_fuzzy_search(): void
+    {
+        $field = NovaFontAwesome::make('Icon')->fuzzySearch(false);
+
+        $this->assertFalse($field->meta['fuzzySearch']);
+    }
+
+    /** @test */
+    public function it_can_set_fuzzy_search_threshold(): void
+    {
+        $field = NovaFontAwesome::make('Icon')->fuzzySearchThreshold(0.5);
+
+        $this->assertEquals(0.5, $field->meta['fuzzySearchThreshold']);
+    }
+
+    /** @test */
+    public function it_can_chain_new_methods(): void
+    {
+        $field = NovaFontAwesome::make('Icon')
+            ->kitId('abc123')
+            ->families(['classic', 'sharp'])
+            ->fuzzySearch(true)
+            ->fuzzySearchThreshold(0.4);
+
+        $this->assertEquals('abc123', $field->meta['kitId']);
+        $this->assertEquals(['classic', 'sharp'], $field->meta['families']);
+        $this->assertTrue($field->meta['fuzzySearch']);
+        $this->assertEquals(0.4, $field->meta['fuzzySearchThreshold']);
+    }
 }

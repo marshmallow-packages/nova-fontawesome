@@ -124,6 +124,7 @@
     import { FormField, HandlesValidationErrors } from "laravel-nova";
     import { Button } from "laravel-nova-ui";
     import debounce from "lodash/debounce";
+    import { fuzzySearchIcons, getCommonIcons } from "../utils/fuzzySearch.js";
 
     export default {
         name: "GeneralModal",
@@ -148,6 +149,8 @@
             availableFamilies: [],
             availableStyles: [],
             debouncedSearch: null,
+            fuzzyResults: [], // Local fuzzy search results
+            useLocalFallback: false, // Whether to use local fallback
         }),
         computed: {
             pro() {
@@ -155,6 +158,12 @@
             },
             minSearchLength() {
                 return this.field.minSearchLength || 2;
+            },
+            fuzzySearchEnabled() {
+                return this.field.fuzzySearch !== false;
+            },
+            fuzzySearchThreshold() {
+                return this.field.fuzzySearchThreshold || 0.3;
             },
             familyOptions() {
                 const placeholder = {
@@ -259,12 +268,22 @@
                     this.icons = [];
                     this.iconsChunked = [];
                     this.chunk = 0;
+                    this.useLocalFallback = false;
                     return;
                 }
 
                 this.isLoading = true;
                 this.chunk = 0;
                 this.iconsChunked = [];
+                this.useLocalFallback = false;
+
+                // Start local fuzzy search immediately for instant feedback
+                if (this.fuzzySearchEnabled) {
+                    this.fuzzyResults = fuzzySearchIcons(this.filter.search, {
+                        threshold: this.fuzzySearchThreshold,
+                        maxResults: this.field.maxResults || 50,
+                    });
+                }
 
                 try {
                     const params = {
@@ -283,13 +302,27 @@
                         { params }
                     );
 
-                    if (data.success) {
+                    if (data.success && data.icons.length > 0) {
                         this.icons = data.icons;
-                        this.getChunk();
+                        this.useLocalFallback = false;
+                    } else if (this.fuzzySearchEnabled && this.fuzzyResults.length > 0) {
+                        // Use fuzzy results if API returned nothing
+                        this.icons = this.fuzzyResults;
+                        this.useLocalFallback = true;
+                    } else {
+                        this.icons = [];
                     }
+                    this.getChunk();
                 } catch (error) {
                     console.error("Error searching icons:", error);
-                    this.icons = [];
+                    // Fallback to fuzzy search results on API error
+                    if (this.fuzzySearchEnabled && this.fuzzyResults.length > 0) {
+                        this.icons = this.fuzzyResults;
+                        this.useLocalFallback = true;
+                        this.getChunk();
+                    } else {
+                        this.icons = [];
+                    }
                 } finally {
                     this.isLoading = false;
                 }
@@ -307,12 +340,23 @@
                         { params }
                     );
 
-                    if (data.success) {
+                    if (data.success && data.icons.length > 0) {
                         this.icons = data.icons;
-                        this.getChunk();
+                        this.useLocalFallback = false;
+                    } else if (this.fuzzySearchEnabled) {
+                        // Use local common icons as fallback
+                        this.icons = getCommonIcons(24);
+                        this.useLocalFallback = true;
                     }
+                    this.getChunk();
                 } catch (error) {
                     console.error("Error fetching popular icons:", error);
+                    // Fallback to local common icons
+                    if (this.fuzzySearchEnabled) {
+                        this.icons = getCommonIcons(24);
+                        this.useLocalFallback = true;
+                        this.getChunk();
+                    }
                 } finally {
                     this.isLoading = false;
                 }
