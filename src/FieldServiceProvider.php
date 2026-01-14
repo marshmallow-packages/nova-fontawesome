@@ -45,9 +45,9 @@ class FieldServiceProvider extends ServiceProvider
      */
     protected function loadTranslations(): void
     {
-        // Try to use nova-translations-loader if available
+        // Try to use nova-translations-loader if available and we have the trait
         if (trait_exists(\Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations::class)) {
-            $this->loadNovaTranslations(__DIR__ . '/../resources/lang', 'nova-fontawesome', true);
+            $this->loadNovaTranslationsViaTrait();
         } else {
             // Fallback to Laravel's built-in JSON translations
             $this->loadJsonTranslationsFrom(__DIR__ . '/../resources/lang');
@@ -56,23 +56,35 @@ class FieldServiceProvider extends ServiceProvider
     }
 
     /**
-     * Load translations using nova-translations-loader.
-     * This method mimics the LoadsNovaTranslations trait behavior.
+     * Load translations using nova-translations-loader trait.
+     * We manually implement what the trait does to avoid inheritance issues.
      */
-    protected function loadNovaTranslations(string $path, string $domain, bool $override = false): void
+    protected function loadNovaTranslationsViaTrait(): void
     {
-        if (trait_exists(\Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations::class)) {
-            // Use reflection to call the trait method if available
-            $loader = new class {
-                use \Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
+        $path = __DIR__ . '/../resources/lang';
+        $domain = 'nova-fontawesome';
 
-                public function load(string $path, string $domain, bool $override): void
-                {
-                    $this->loadTranslations($path, $domain, $override);
+        // Register translations with Nova directly (what the trait does internally)
+        if (method_exists(Nova::class, 'translations')) {
+            Nova::serving(function () use ($path, $domain) {
+                $locale = app()->getLocale();
+                $fallbackLocale = config('app.fallback_locale');
+
+                // Try to load the translation file
+                foreach ([$locale, $fallbackLocale, 'en'] as $tryLocale) {
+                    $file = "{$path}/{$tryLocale}.json";
+                    if (file_exists($file)) {
+                        $translations = json_decode(file_get_contents($file), true) ?? [];
+                        Nova::translations($translations);
+                        break;
+                    }
                 }
-            };
-            $loader->load($path, $domain, $override);
+            });
         }
+
+        // Also load via Laravel's standard translation loading
+        $this->loadJsonTranslationsFrom($path);
+        $this->loadTranslationsFrom($path, $domain);
     }
 
     /**
