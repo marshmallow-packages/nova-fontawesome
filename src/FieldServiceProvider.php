@@ -6,6 +6,7 @@ use Laravel\Nova\Nova;
 use Laravel\Nova\Events\ServingNova;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
 use Outl1ne\NovaTranslationsLoader\LoadsNovaTranslations;
 
 class FieldServiceProvider extends ServiceProvider
@@ -64,5 +65,9 @@ class FieldServiceProvider extends ServiceProvider
             __DIR__ . '/../config/nova-fontawesome.php',
             'nova-fontawesome'
         );
+
+        $this->app->singleton(FontAwesomeApiService::class, function ($app) {
+            return new FontAwesomeApiService();
+        });
     }
 }
