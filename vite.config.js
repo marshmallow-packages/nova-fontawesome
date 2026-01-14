@@ -22,11 +22,12 @@ export default defineConfig({
             fileName: () => 'js/nova-fontawesome.js',
         },
         rollupOptions: {
-            external: ['vue', 'nova', 'laravel-nova-ui'],
+            external: ['vue', 'nova', 'laravel-nova', 'laravel-nova-ui'],
             output: {
                 globals: {
                     vue: 'Vue',
                     nova: 'Nova',
+                    'laravel-nova': 'LaravelNova',
                     'laravel-nova-ui': 'LaravelNovaUi',
                 },
                 assetFileNames: 'css/[name][extname]',
