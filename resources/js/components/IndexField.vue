@@ -1,39 +1,35 @@
 <template>
-    <span
-        v-if="hasValue"
-        class="fontawesome-index-icon inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray text-gray-700 dark:text-gray-200"
-        style="width: 2rem; height: 2rem; font-size: 1rem"
-    >
-        <i :class="fieldValue" style="font-size: 1rem"></i>
+    <span v-if="hasValue" class="fontawesome-index-icon">
+        <i :class="fieldValue"></i>
     </span>
     <span v-else>&mdash;</span>
 </template>
 
 <script>
-    export default {
-        props: ["resourceName", "field"],
-        computed: {
-            fieldValue() {
-                return this.field?.value || this.field?.displayedAs || "";
-            },
-            hasValue() {
-                return !!this.fieldValue;
-            },
+export default {
+    props: ['resourceName', 'field'],
+    computed: {
+        fieldValue() {
+            return this.field?.value || this.field?.displayedAs || '';
         },
-    };
+        hasValue() {
+            return !!this.fieldValue;
+        },
+    },
+};
 </script>
 
 <style>
-    .border-gray {
-        border-color: rgb(var(--colors-gray-300));
-    }
+.fontawesome-index-icon {
+    font-size: 1.5em;
+}
 
-    .dark .border-gray {
-        border-color: rgb(var(--colors-gray-700));
-    }
+.fontawesome-index-icon i {
+    display: inline-block;
+}
 
-    .fontawesome-index-icon svg {
-        width: 1rem;
-        height: 1rem;
-    }
+.fontawesome-index-icon svg {
+    width: 1.5em;
+    height: 1.5em;
+}
 </style>
