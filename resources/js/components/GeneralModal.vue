@@ -66,7 +66,7 @@
                 >
                     <div
                         v-for="(icon, index) in chunkedIcons"
-                        :key="icon.id || index"
+                        :key="icon._uniqueId || icon.id || index"
                         class="inner flex flex-col items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                         @click="saveIcon(icon)"
                     >
@@ -139,6 +139,7 @@
         data: () => ({
             isLoading: false,
             icons: [],
+            allIcons: [], // Store all results before filtering
             iconsChunked: [],
             expanded: false,
             chunk: 0,
@@ -154,6 +155,10 @@
             debouncedSearch: null,
             fuzzyResults: [], // Local fuzzy search results
             useLocalFallback: false, // Whether to use local fallback
+            filterCounts: {
+                families: {},
+                styles: {},
+            },
         }),
         computed: {
             pro() {
@@ -169,53 +174,42 @@
                 return this.field.fuzzySearchThreshold || 0.3;
             },
             familyOptions() {
+                const totalCount = Object.values(this.filterCounts.families).reduce((a, b) => a + b, 0);
                 const placeholder = {
                     value: "all",
-                    label: this.__("novaFontawesome.selectFamily.placeholder"),
+                    label: totalCount > 0
+                        ? `${this.__("novaFontawesome.selectFamily.placeholder")} (${totalCount})`
+                        : this.__("novaFontawesome.selectFamily.placeholder"),
                 };
                 return [
                     placeholder,
-                    ...this.availableFamilies.map((f) => ({
-                        value: f.id,
-                        label: f.label,
-                    })),
+                    ...this.availableFamilies.map((f) => {
+                        const count = this.filterCounts.families[f.id] || 0;
+                        return {
+                            value: f.id,
+                            label: count > 0 ? `${f.label} (${count})` : f.label,
+                        };
+                    }),
                 ];
             },
             styleOptions() {
+                const totalCount = Object.values(this.filterCounts.styles).reduce((a, b) => a + b, 0);
                 const placeholder = {
                     value: "all",
-                    label: this.__("novaFontawesome.selectStyle.placeholder"),
+                    label: totalCount > 0
+                        ? `${this.__("novaFontawesome.selectStyle.placeholder")} (${totalCount})`
+                        : this.__("novaFontawesome.selectStyle.placeholder"),
                 };
                 return [
                     placeholder,
-                    ...this.availableStyles.map((s) => ({
-                        value: s.id,
-                        label: s.label,
-                    })),
+                    ...this.availableStyles.map((s) => {
+                        const count = this.filterCounts.styles[s.id] || 0;
+                        return {
+                            value: s.id,
+                            label: count > 0 ? `${s.label} (${count})` : s.label,
+                        };
+                    }),
                 ];
-            },
-            filteredIcons() {
-                let filtered = this.icons;
-
-                if (this.filter.style !== "all") {
-                    filtered = filtered.filter((icon) => {
-                        const styles = this.getAvailableStyles(icon);
-                        return styles.some(
-                            (s) => s.style === this.filter.style
-                        );
-                    });
-                }
-
-                if (this.filter.family !== "all") {
-                    filtered = filtered.filter((icon) => {
-                        const styles = this.getAvailableStyles(icon);
-                        return styles.some(
-                            (s) => s.family === this.filter.family
-                        );
-                    });
-                }
-
-                return filtered;
             },
             chunkedIcons() {
                 return this.iconsChunked;
@@ -267,9 +261,11 @@
             async searchIcons() {
                 if (this.filter.search.length < this.minSearchLength) {
                     this.icons = [];
+                    this.allIcons = [];
                     this.iconsChunked = [];
                     this.chunk = 0;
                     this.useLocalFallback = false;
+                    this.filterCounts = { families: {}, styles: {} };
                     return;
                 }
 
@@ -279,32 +275,26 @@
                 this.useLocalFallback = false;
 
                 try {
-                    // Build search params
-                    const params = {
+                    // Get all results without family/style filter to calculate counts
+                    const baseParams = {
                         query: this.filter.search,
                         version: this.field.version || "6.x",
-                        first: this.field.maxResults || 50,
+                        first: this.field.maxResults || 100,
                         freeOnly: this.field.freeOnly !== false,
                     };
 
-                    // Add family filter if selected
-                    if (this.filter.family && this.filter.family !== "all") {
-                        params.family = this.filter.family;
-                    }
-
-                    // Add style filter if selected
-                    if (this.filter.style && this.filter.style !== "all") {
-                        params.style = this.filter.style;
-                    }
-
                     const { data } = await Nova.request().get(
                         "/nova-vendor/nova-fontawesome/search",
-                        { params }
+                        { params: baseParams }
                     );
 
                     if (data.success && data.icons.length > 0) {
-                        this.icons = data.icons;
-                        this.getChunk();
+                        // Store all icons and calculate counts
+                        this.allIcons = data.icons;
+                        this.calculateFilterCounts(data.icons);
+
+                        // Apply local filtering
+                        this.applyFilters();
                     } else {
                         // Fallback to fuzzy search if API returns no results
                         this.useFuzzyFallback();
@@ -316,6 +306,47 @@
                 } finally {
                     this.isLoading = false;
                 }
+            },
+
+            applyFilters() {
+                let filteredIcons = this.allIcons;
+
+                if (this.filter.family && this.filter.family !== "all") {
+                    filteredIcons = filteredIcons.filter(icon => {
+                        const iconFamily = icon._selectedStyle?.family || "classic";
+                        return iconFamily === this.filter.family;
+                    });
+                }
+
+                if (this.filter.style && this.filter.style !== "all") {
+                    filteredIcons = filteredIcons.filter(icon => {
+                        const iconStyle = icon._selectedStyle?.style || "solid";
+                        return iconStyle === this.filter.style;
+                    });
+                }
+
+                this.icons = filteredIcons;
+                this.chunk = 0;
+                this.iconsChunked = [];
+                this.getChunk();
+            },
+
+            calculateFilterCounts(icons) {
+                const familyCounts = {};
+                const styleCounts = {};
+
+                icons.forEach(icon => {
+                    const family = icon._selectedStyle?.family || "classic";
+                    const style = icon._selectedStyle?.style || "solid";
+
+                    familyCounts[family] = (familyCounts[family] || 0) + 1;
+                    styleCounts[style] = (styleCounts[style] || 0) + 1;
+                });
+
+                this.filterCounts = {
+                    families: familyCounts,
+                    styles: styleCounts,
+                };
             },
 
             useFuzzyFallback() {
@@ -398,9 +429,8 @@
 
             getChunk() {
                 const chunkSize = 100;
-                const filtered = this.filteredIcons;
 
-                const nextChunk = filtered.slice(
+                const nextChunk = this.icons.slice(
                     this.chunk,
                     this.chunk + chunkSize
                 );
@@ -514,6 +544,14 @@
             },
 
             getIconFamilyStyle(icon) {
+                // If the backend has pre-selected a style (expanded results), use it
+                if (icon._selectedStyle) {
+                    return {
+                        family: icon._selectedStyle.family || "classic",
+                        style: icon._selectedStyle.style || "solid",
+                    };
+                }
+
                 const styles = this.getAvailableStyles(icon);
 
                 if (styles.length === 0) {
@@ -587,16 +625,18 @@
         watch: {
             "filter.family": {
                 handler() {
-                    this.chunk = 0;
-                    this.iconsChunked = [];
-                    this.getChunk();
+                    // Re-apply filters when family changes (uses cached allIcons)
+                    if (this.allIcons.length > 0) {
+                        this.applyFilters();
+                    }
                 },
             },
             "filter.style": {
                 handler() {
-                    this.chunk = 0;
-                    this.iconsChunked = [];
-                    this.getChunk();
+                    // Re-apply filters when style changes (uses cached allIcons)
+                    if (this.allIcons.length > 0) {
+                        this.applyFilters();
+                    }
                 },
             },
         },

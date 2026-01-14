@@ -260,7 +260,80 @@ class FontAwesomeApiService
             }));
         }
 
+        // Expand icons to show each style variation as separate entry (like FA website)
+        $icons = $this->expandIconsByStyle($icons, $family, $style);
+
         return $icons;
+    }
+
+    /**
+     * Expand icons to create separate entries for each style variation.
+     * This matches the Font Awesome website behavior where the same icon
+     * appears multiple times (once for each available style: solid, regular, duotone, etc.).
+     */
+    protected function expandIconsByStyle(array $icons, ?string $family = null, ?string $style = null): array
+    {
+        $expanded = [];
+
+        foreach ($icons as $icon) {
+            $availableStyles = [];
+
+            // Get styles from free license
+            $freeStyles = $icon['familyStylesByLicense']['free'] ?? [];
+            foreach ($freeStyles as $styleData) {
+                $availableStyles[] = $styleData;
+            }
+
+            // Include pro styles if not free-only
+            if (! $this->freeOnly) {
+                $proStyles = $icon['familyStylesByLicense']['pro'] ?? [];
+                foreach ($proStyles as $styleData) {
+                    // Avoid duplicates
+                    $key = ($styleData['family'] ?? 'classic') . '-' . ($styleData['style'] ?? 'solid');
+                    $exists = false;
+                    foreach ($availableStyles as $existing) {
+                        $existingKey = ($existing['family'] ?? 'classic') . '-' . ($existing['style'] ?? 'solid');
+                        if ($existingKey === $key) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (! $exists) {
+                        $availableStyles[] = $styleData;
+                    }
+                }
+            }
+
+            // Filter by family/style if specified
+            if ($family || $style) {
+                $availableStyles = array_filter($availableStyles, function ($s) use ($family, $style) {
+                    $familyMatch = ! $family || ($s['family'] ?? 'classic') === $family;
+                    $styleMatch = ! $style || ($s['style'] ?? 'solid') === $style;
+
+                    return $familyMatch && $styleMatch;
+                });
+            }
+
+            // If no styles available after filtering, skip this icon
+            if (empty($availableStyles)) {
+                continue;
+            }
+
+            // Create separate entry for each style variation
+            foreach ($availableStyles as $styleData) {
+                $expandedIcon = $icon;
+                // Add the specific style this entry represents
+                $expandedIcon['_selectedStyle'] = [
+                    'family' => $styleData['family'] ?? 'classic',
+                    'style' => $styleData['style'] ?? 'solid',
+                ];
+                // Create unique ID for this style variation
+                $expandedIcon['_uniqueId'] = $icon['id'] . '-' . ($styleData['family'] ?? 'classic') . '-' . ($styleData['style'] ?? 'solid');
+                $expanded[] = $expandedIcon;
+            }
+        }
+
+        return $expanded;
     }
 
     /**
