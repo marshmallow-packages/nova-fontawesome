@@ -7,6 +7,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The default Font Awesome version to use when searching icons.
+    | Supports both 6.x and 7.x versions.
     | Use semantic versions like "6.x" or specific versions like "6.5.1".
     |
     */
@@ -30,7 +31,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | By default, only free icons are shown. Set to false to include
-    | Pro icons (requires Font Awesome Pro subscription).
+    | Pro icons (requires Font Awesome Pro subscription and API token).
     |
     */
     'free_only' => env('FONTAWESOME_FREE_ONLY', true),
@@ -63,10 +64,12 @@ return [
     | Max Search Results
     |--------------------------------------------------------------------------
     |
-    | Maximum number of icons to return in a search query.
+    | Maximum number of icons to return per search request (per page).
+    | Used for pagination - more results will be loaded as user scrolls.
+    | Recommended: 100 for optimal performance with infinite scroll.
     |
     */
-    'max_results' => env('FONTAWESOME_MAX_RESULTS', 50),
+    'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
 
     /*
     |--------------------------------------------------------------------------
@@ -74,7 +77,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Optional Font Awesome API token for authenticated requests.
-    | This is required if you want to access Pro icons.
+    | This is required if you want to access Pro icons via the GraphQL API.
     | Get your token from: https://fontawesome.com/account
     |
     */
@@ -82,25 +85,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Pro CSS Configuration
+    | CSS Loading Strategy
     |--------------------------------------------------------------------------
     |
-    | Configure how to load Font Awesome Pro CSS. You can use a Kit ID from
-    | your Font Awesome account, provide a direct CSS URL, or use self-hosted CSS.
+    | How Font Awesome CSS should be loaded for icon rendering.
+    |
+    | Priority Order:
+    | 1. 'self-hosted' (default) - Load CSS from your own server
+    | 2. 'kit' - Use a Font Awesome Kit (requires kit_id)
+    | 3. 'cdn' - Load free icons from Font Awesome CDN (fallback)
+    |
+    | Strategies:
+    | - 'self-hosted': Best for Pro users. Download CSS from fontawesome.com
+    |                  and place in public/vendor/fontawesome/
+    | - 'kit': Use Font Awesome Kit for automatic Pro CSS loading
+    | - 'cdn': Free icons only via CDN (no Pro support)
     |
     */
-    'pro_css' => [
-        // Option 1: Use a Font Awesome Kit (recommended for Pro users)
+    'css' => [
+        'strategy' => env('FONTAWESOME_CSS_STRATEGY', 'self-hosted'),
+
+        // Path to self-hosted CSS (relative to public folder)
+        // Default: /vendor/fontawesome/css/all.min.css
+        'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
+
+        // Font Awesome Kit ID (only used if strategy = 'kit')
         // Get your Kit ID from https://fontawesome.com/kits
         'kit_id' => env('FONTAWESOME_KIT_ID'),
 
-        // Option 2: Direct CSS URL
-        // Example: 'https://pro.fontawesome.com/releases/v6.5.0/css/all.css'
-        'css_url' => env('FONTAWESOME_PRO_CSS_URL'),
-
-        // Option 3: Self-hosted CSS path (relative to public folder)
-        // Example: 'css/fontawesome-pro.css'
-        'local_css' => env('FONTAWESOME_LOCAL_CSS'),
+        // CDN version to use when strategy = 'cdn'
+        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
     ],
 
     /*
@@ -116,4 +130,16 @@ return [
         'enabled' => true,
         'threshold' => 0.3, // 0-1, lower = stricter matching
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy Format Conversion
+    |--------------------------------------------------------------------------
+    |
+    | Automatically convert legacy FA5 shorthand classes (fas, far, fab, etc.)
+    | to modern FA6/FA7 format when saving. This ensures consistency and
+    | future compatibility.
+    |
+    */
+    'convert_legacy_format' => true,
 ];

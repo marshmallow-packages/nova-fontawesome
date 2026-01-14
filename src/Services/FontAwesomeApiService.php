@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Marshmallow\NovaFontAwesome\Services;
 
 use Exception;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Client\ConnectionException;
 use Marshmallow\NovaFontAwesome\Http\Support\FontAwesomeParser;
 
 class FontAwesomeApiService
@@ -143,7 +146,7 @@ class FontAwesomeApiService
     {
         $apiToken = config('nova-fontawesome.api_token');
 
-        if (! $apiToken) {
+        if (!$apiToken) {
             return null;
         }
 
@@ -190,9 +193,16 @@ class FontAwesomeApiService
     }
 
     /**
-     * Search for icons.
+     * Search for icons with pagination support.
+     *
+     * @param string      $query  Search query
+     * @param string|null $family Filter by family
+     * @param string|null $style  Filter by style
+     * @param string|null $cursor Pagination cursor for next page
+     *
+     * @return array{icons: array, hasMore: bool, cursor: string|null, total: int, error?: bool, message?: string}
      */
-    public function search(string $query, ?string $family = null, ?string $style = null): array
+    public function search(string $query, ?string $family = null, ?string $style = null, ?string $cursor = null): array
     {
         $cacheKey = $this->getCacheKey('search', [
             'query' => $query,
@@ -201,6 +211,7 @@ class FontAwesomeApiService
             'family' => $family,
             'style' => $style,
             'freeOnly' => $this->freeOnly,
+            'cursor' => $cursor,
         ]);
 
         if ($this->cacheEnabled && Cache::has($cacheKey)) {
@@ -208,31 +219,55 @@ class FontAwesomeApiService
         }
 
         try {
-            $results = $this->executeSearchQuery($query, $family, $style);
+            $result = $this->executeSearchQuery($query, $family, $style, $cursor);
 
-            if ($this->cacheEnabled && ! empty($results)) {
-                Cache::put($cacheKey, $results, $this->cacheDuration);
+            if ($this->cacheEnabled && !empty($result['icons'])) {
+                Cache::put($cacheKey, $result, $this->cacheDuration);
             }
 
-            return $results;
+            return $result;
+        } catch (ConnectionException $e) {
+            $this->logError('Font Awesome API connection failed', [
+                'query' => $query,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'icons' => [],
+                'hasMore' => false,
+                'cursor' => null,
+                'total' => 0,
+                'error' => true,
+                'message' => 'Font Awesome API is currently unavailable. Please try again later.',
+            ];
         } catch (Exception $e) {
             $this->logError('Font Awesome search failed, using fallback', [
                 'query' => $query,
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->getFallbackIcons($query);
+            $fallbackIcons = $this->getFallbackIcons($query);
+
+            return [
+                'icons' => $fallbackIcons,
+                'hasMore' => false,
+                'cursor' => null,
+                'total' => count($fallbackIcons),
+                'fallback' => true,
+            ];
         }
     }
 
     /**
-     * Execute the GraphQL search query.
+     * Execute the GraphQL search query with pagination.
+     *
+     * @return array{icons: array, hasMore: bool, cursor: string|null, total: int}
      */
-    protected function executeSearchQuery(string $query, ?string $family = null, ?string $style = null): array
+    protected function executeSearchQuery(string $query, ?string $family = null, ?string $style = null, ?string $cursor = null): array
     {
-        [$graphqlQuery, $variables] = $this->buildSearchQuery($query, $family, $style);
+        [$graphqlQuery, $variables] = $this->buildSearchQuery($query, $family, $style, $cursor);
 
-        $http = Http::timeout(10);
+        $http = Http::timeout(10)->retry(2, 100);
         if ($this->authToken) {
             $http = $http->withToken($this->authToken);
         }
@@ -242,7 +277,12 @@ class FontAwesomeApiService
             'variables' => $variables,
         ]);
 
-        if (! $response->successful()) {
+        // Handle rate limiting
+        if ($response->status() === 429) {
+            throw new Exception('Rate limit exceeded. Please try again later.');
+        }
+
+        if (!$response->successful()) {
             throw new Exception('GraphQL request failed: ' . $response->status());
         }
 
@@ -253,17 +293,52 @@ class FontAwesomeApiService
         }
 
         $icons = $data['data']['search'] ?? [];
+        $totalFromApi = count($icons);
 
         if ($this->freeOnly) {
             $icons = array_values(array_filter($icons, function ($icon) {
-                return ! empty($icon['familyStylesByLicense']['free']);
+                return !empty($icon['familyStylesByLicense']['free']);
             }));
         }
 
         // Expand icons to show each style variation as separate entry (like FA website)
         $icons = $this->expandIconsByStyle($icons, $family, $style);
 
-        return $icons;
+        // Calculate pagination info
+        // Font Awesome API doesn't have native cursor pagination, so we simulate it
+        // by using offset-based pagination encoded in the cursor
+        $offset = $cursor ? $this->decodeCursor($cursor) : 0;
+        $hasMore = $totalFromApi >= $this->maxResults;
+        $nextCursor = $hasMore ? $this->encodeCursor($offset + $this->maxResults) : null;
+
+        return [
+            'icons' => $icons,
+            'hasMore' => $hasMore,
+            'cursor' => $nextCursor,
+            'total' => $offset + count($icons) + ($hasMore ? 1 : 0), // Approximate total
+        ];
+    }
+
+    /**
+     * Encode pagination offset as cursor.
+     */
+    protected function encodeCursor(int $offset): string
+    {
+        return base64_encode(json_encode(['offset' => $offset]));
+    }
+
+    /**
+     * Decode cursor to pagination offset.
+     */
+    protected function decodeCursor(string $cursor): int
+    {
+        try {
+            $decoded = json_decode(base64_decode($cursor), true);
+
+            return $decoded['offset'] ?? 0;
+        } catch (Exception $e) {
+            return 0;
+        }
     }
 
     /**
@@ -285,7 +360,7 @@ class FontAwesomeApiService
             }
 
             // Include pro styles if not free-only
-            if (! $this->freeOnly) {
+            if (!$this->freeOnly) {
                 $proStyles = $icon['familyStylesByLicense']['pro'] ?? [];
                 foreach ($proStyles as $styleData) {
                     // Avoid duplicates
@@ -298,7 +373,7 @@ class FontAwesomeApiService
                             break;
                         }
                     }
-                    if (! $exists) {
+                    if (!$exists) {
                         $availableStyles[] = $styleData;
                     }
                 }
@@ -307,8 +382,8 @@ class FontAwesomeApiService
             // Filter by family/style if specified
             if ($family || $style) {
                 $availableStyles = array_filter($availableStyles, function ($s) use ($family, $style) {
-                    $familyMatch = ! $family || ($s['family'] ?? 'classic') === $family;
-                    $styleMatch = ! $style || ($s['style'] ?? 'solid') === $style;
+                    $familyMatch = !$family || ($s['family'] ?? 'classic') === $family;
+                    $styleMatch = !$style || ($s['style'] ?? 'solid') === $style;
 
                     return $familyMatch && $styleMatch;
                 });
@@ -339,8 +414,10 @@ class FontAwesomeApiService
     /**
      * Build the GraphQL search query.
      */
-    protected function buildSearchQuery(string $query, ?string $family = null, ?string $style = null): array
+    protected function buildSearchQuery(string $query, ?string $family = null, ?string $style = null, ?string $cursor = null): array
     {
+        $offset = $cursor ? $this->decodeCursor($cursor) : 0;
+
         $variables = [
             'version' => $this->version,
             'query' => $query,
@@ -417,7 +494,7 @@ class FontAwesomeApiService
         try {
             $icon = $this->executeIconQuery($name, $family, $style);
 
-            if (! $icon) {
+            if (!$icon) {
                 // Fallback to search
                 $results = $this->search($name, $family, $style);
                 foreach ($results as $result) {
@@ -426,7 +503,7 @@ class FontAwesomeApiService
                         break;
                     }
                 }
-                $icon = $icon ?? ($results[0] ?? null);
+                $icon ??= ($results[0] ?? null);
             }
 
             if ($icon && $this->cacheEnabled) {
@@ -515,7 +592,7 @@ class FontAwesomeApiService
             'variables' => $variables,
         ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             return null;
         }
 
@@ -554,14 +631,14 @@ class FontAwesomeApiService
             // Remove duplicates
             $unique = [];
             foreach ($allIcons as $icon) {
-                if (! isset($unique[$icon['id']])) {
+                if (!isset($unique[$icon['id']])) {
                     $unique[$icon['id']] = $icon;
                 }
             }
 
             $icons = array_slice(array_values($unique), 0, $this->maxResults);
 
-            if ($this->cacheEnabled && ! empty($icons)) {
+            if ($this->cacheEnabled && !empty($icons)) {
                 Cache::put($cacheKey, $icons, $this->cacheDuration * 24);
             }
 
@@ -610,14 +687,14 @@ class FontAwesomeApiService
                 'variables' => ['version' => $this->version],
             ]);
 
-            if (! $response->successful()) {
+            if (!$response->successful()) {
                 throw new Exception('Metadata request failed');
             }
 
             $data = $response->json();
             $release = $data['data']['release'] ?? null;
 
-            if (! $release) {
+            if (!$release) {
                 return $this->getDefaultMetadata();
             }
 
@@ -628,8 +705,8 @@ class FontAwesomeApiService
             $configuredFamilies = config('nova-fontawesome.families', ['classic', 'brands']);
             $configuredStyles = config('nova-fontawesome.styles', ['solid', 'regular', 'brands']);
 
-            $families = array_values(array_filter($families, fn ($f) => in_array(strtolower($f['id']), $configuredFamilies)));
-            $styles = array_values(array_filter($styles, fn ($s) => in_array(strtolower($s['id']), $configuredStyles)));
+            $families = array_values(array_filter($families, fn ($f) => in_array(mb_strtolower($f['id']), $configuredFamilies)));
+            $styles = array_values(array_filter($styles, fn ($s) => in_array(mb_strtolower($s['id']), $configuredStyles)));
 
             $metadata = [
                 'families' => $families,
@@ -702,7 +779,7 @@ class FontAwesomeApiService
             'freeOnly' => $this->freeOnly,
             'cacheEnabled' => $this->cacheEnabled,
             'cacheDuration' => $this->cacheDuration,
-            'hasApiToken' => ! empty(config('nova-fontawesome.api_token')),
+            'hasApiToken' => !empty(config('nova-fontawesome.api_token')),
             'tests' => [],
         ];
 
@@ -828,7 +905,7 @@ class FontAwesomeApiService
      */
     protected function testCache(): array
     {
-        if (! $this->cacheEnabled) {
+        if (!$this->cacheEnabled) {
             return [
                 'success' => true,
                 'message' => 'Cache is disabled',
@@ -872,7 +949,7 @@ class FontAwesomeApiService
             return $this->formatFallbackIcons(array_slice($this->fallbackIcons, 0, $this->maxResults));
         }
 
-        $query = strtolower($query);
+        $query = mb_strtolower($query);
         $matched = array_filter($this->fallbackIcons, function ($icon) use ($query) {
             return $this->fuzzyMatch($query, $icon['id']) || $this->fuzzyMatch($query, $icon['label']);
         });
@@ -928,8 +1005,8 @@ class FontAwesomeApiService
      */
     protected function fuzzyMatch(string $query, string $target): bool
     {
-        $query = strtolower($query);
-        $target = strtolower($target);
+        $query = mb_strtolower($query);
+        $target = mb_strtolower($target);
 
         // Exact or substring match
         if (str_contains($target, $query)) {
@@ -938,7 +1015,7 @@ class FontAwesomeApiService
 
         // Levenshtein distance (allow ~30% character difference)
         $distance = levenshtein($query, $target);
-        $maxDistance = max(1, strlen($query) * 0.3);
+        $maxDistance = max(1, mb_strlen($query) * 0.3);
 
         return $distance <= $maxDistance;
     }
@@ -970,7 +1047,7 @@ class FontAwesomeApiService
             'maxResults' => $this->maxResults,
             'cacheDuration' => $this->cacheDuration,
             'cacheEnabled' => $this->cacheEnabled,
-            'hasAuthToken' => ! empty($this->authToken),
+            'hasAuthToken' => !empty($this->authToken),
         ];
     }
 }

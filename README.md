@@ -10,6 +10,7 @@ A Laravel Nova field for selecting Font Awesome icons using the Font Awesome Gra
 
 - 🔍 **Smart search** - Uses Font Awesome's Algolia-powered fuzzy search
 - 🚀 **On-demand loading** - Icons are fetched via API, not bundled
+- 📜 **Infinite scroll** - Load more icons automatically as you scroll
 - 🎨 **Style filtering** - Filter by solid, regular, brands, light, thin, duotone
 - 👨‍👩‍👧‍👦 **Family support** - Classic, Brands, Duotone, Sharp, Sharp-Duotone
 - 💾 **Caching** - API results are cached to reduce requests
@@ -18,6 +19,8 @@ A Laravel Nova field for selecting Font Awesome icons using the Font Awesome Gra
 - 📱 **Responsive** - Works great on all screen sizes
 - 🔄 **Fallback icons** - Graceful degradation when API is unavailable
 - 🔎 **Local fuzzy search** - Instant results for common icons
+- 🔧 **CSS Strategies** - Self-hosted, Kit, or CDN CSS loading
+- 🔀 **Legacy format support** - Auto-converts FA5 classes to modern format
 - 🐛 **Debug endpoint** - Built-in troubleshooting tools
 
 > [!important]
@@ -25,9 +28,10 @@ A Laravel Nova field for selecting Font Awesome icons using the Font Awesome Gra
 
 ## Requirements
 
-- PHP ^8.1 | ^8.2 | ^8.3
+- PHP ^8.2
 - Laravel Nova ^5.0
-- Laravel 10.x or 11.x
+- Laravel 11.x or 12.x
+- Font Awesome 6.x or 7.x
 
 > **Note:** For Nova 4 support, use version 1.x: `composer require marshmallow/nova-fontawesome:^1.0`
 
@@ -53,6 +57,54 @@ npm install && npm run build
 
 That's it! The package uses the Font Awesome GraphQL API, so you don't need to manually download or include Font Awesome files.
 
+## CSS Loading Strategy
+
+The package supports three CSS loading strategies (in order of priority):
+
+### 1. Self-Hosted CSS (Recommended for Pro)
+
+Download Font Awesome CSS files and host them on your server:
+
+1. Download Font Awesome from [fontawesome.com](https://fontawesome.com/download)
+2. Extract and copy to `public/vendor/fontawesome/`
+3. Set strategy in `.env`:
+
+```env
+FONTAWESOME_CSS_STRATEGY=self-hosted
+FONTAWESOME_CSS_PATH=/vendor/fontawesome/css/all.min.css
+```
+
+**Directory structure:**
+```
+public/
+└── vendor/
+    └── fontawesome/
+        ├── css/
+        │   └── all.min.css
+        └── webfonts/
+            └── (font files)
+```
+
+### 2. Font Awesome Kit
+
+Use your Font Awesome Kit for automatic Pro CSS loading:
+
+```env
+FONTAWESOME_CSS_STRATEGY=kit
+FONTAWESOME_KIT_ID=abc123def
+```
+
+Get your Kit ID from [fontawesome.com/kits](https://fontawesome.com/kits)
+
+### 3. CDN (Fallback - Free only)
+
+Load free icons from CDN (default fallback):
+
+```env
+FONTAWESOME_CSS_STRATEGY=cdn
+FONTAWESOME_CDN_VERSION=6.5.1
+```
+
 ## Usage
 
 ### Basic Usage
@@ -76,7 +128,7 @@ public function fields(NovaRequest $request): array
 
 ```php
 NovaFontAwesome::make('Icon')
-    ->version('6.x') // or specific like '6.5.1'
+    ->version('6.x') // or '7.x', or specific like '6.5.1'
 ```
 
 #### Limit Icon Styles
@@ -141,11 +193,11 @@ NovaFontAwesome::make('Icon')
     ->addButtonText('Click Me!')
 ```
 
-#### Limit Search Results
+#### Limit Search Results (Per Page)
 
 ```php
 NovaFontAwesome::make('Icon')
-    ->maxResults(100)
+    ->maxResults(100) // Icons per page for infinite scroll
 ```
 
 #### Minimum Search Length
@@ -212,7 +264,7 @@ public function fields(NovaRequest $request): array
             ->freeOnly()
             ->nullable()
             ->addButtonText('Choose an icon...')
-            ->maxResults(50)
+            ->maxResults(100)
             ->minSearchLength(2)
             ->fuzzySearch(true)
             ->help('Select an icon to represent this item'),
@@ -220,12 +272,41 @@ public function fields(NovaRequest $request): array
 }
 ```
 
+## Icon Class Format
+
+### Stored Value Format
+
+The field stores icons in modern FA6/FA7 format:
+
+```
+"fa-solid fa-user"
+"fa-regular fa-arrow-right"
+"fa-brands fa-github"
+"fa-duotone fa-solid fa-house"
+"fa-sharp fa-solid fa-home"
+```
+
+### Legacy Format Support
+
+The package automatically supports legacy FA5 shorthand classes for backwards compatibility:
+
+| Legacy Format | Converts To |
+|--------------|-------------|
+| `fas fa-home` | `fa-solid fa-home` |
+| `far fa-user` | `fa-regular fa-user` |
+| `fab fa-github` | `fa-brands fa-github` |
+| `fal fa-star` | `fa-light fa-star` |
+| `fat fa-circle` | `fa-thin fa-circle` |
+| `fad fa-house` | `fa-duotone fa-solid fa-house` |
+
+When `convert_legacy_format` is enabled in config (default), legacy formats are automatically converted when saving.
+
 ## How It Works
 
 This package uses the [Font Awesome GraphQL API](https://docs.fontawesome.com/apis/graphql) to:
 
 1. **Search icons** - When you type in the search box, a GraphQL query is sent to Font Awesome's API
-2. **Fetch SVGs** - The API returns icon metadata including SVG data for rendering
+2. **Infinite scroll** - Results are paginated, loading more as you scroll down
 3. **Cache results** - Search results are cached for 1 hour to reduce API calls
 4. **Fallback gracefully** - If the API is unavailable, local fallback icons are used
 
@@ -233,10 +314,11 @@ This package uses the [Font Awesome GraphQL API](https://docs.fontawesome.com/ap
 
 The package registers these API routes:
 
-- `GET /nova-vendor/nova-fontawesome/search` - Search icons
+- `GET /nova-vendor/nova-fontawesome/search` - Search icons (with pagination)
 - `GET /nova-vendor/nova-fontawesome/icon/{name}` - Get a specific icon
-- `GET /nova-vendor/nova-fontawesome/popular` - Get popular icons for initial display
 - `GET /nova-vendor/nova-fontawesome/metadata` - Get available families and styles
+- `GET /nova-vendor/nova-fontawesome/config` - Get CSS configuration
+- `GET /nova-vendor/nova-fontawesome/convert` - Convert legacy class format
 - `GET /nova-vendor/nova-fontawesome/debug` - Troubleshooting endpoint
 - `GET /nova-vendor/nova-fontawesome/fallback` - Get fallback icons
 
@@ -246,7 +328,7 @@ After publishing the config file, you can modify `config/nova-fontawesome.php`:
 
 ```php
 return [
-    // Default Font Awesome version
+    // Default Font Awesome version (6.x or 7.x)
     'version' => env('FONTAWESOME_VERSION', '6.x'),
 
     // Cache duration in seconds (default: 1 hour)
@@ -261,17 +343,18 @@ return [
     // Available icon families
     'families' => ['classic', 'brands'],
 
-    // Maximum search results
-    'max_results' => env('FONTAWESOME_MAX_RESULTS', 50),
+    // Maximum search results per page
+    'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
 
     // Optional API token for authenticated requests (required for Pro icons)
     'api_token' => env('FONTAWESOME_API_TOKEN'),
 
-    // Pro CSS configuration
-    'pro_css' => [
+    // CSS loading strategy
+    'css' => [
+        'strategy' => env('FONTAWESOME_CSS_STRATEGY', 'self-hosted'),
+        'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
         'kit_id' => env('FONTAWESOME_KIT_ID'),
-        'css_url' => env('FONTAWESOME_PRO_CSS_URL'),
-        'local_css' => env('FONTAWESOME_LOCAL_CSS'),
+        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
     ],
 
     // Client-side fuzzy search settings
@@ -279,6 +362,9 @@ return [
         'enabled' => true,
         'threshold' => 0.3,
     ],
+
+    // Auto-convert legacy FA5 classes to modern format
+    'convert_legacy_format' => true,
 ];
 ```
 
@@ -290,15 +376,17 @@ Add these to your `.env` file to customize the configuration:
 FONTAWESOME_VERSION=6.x
 FONTAWESOME_CACHE_DURATION=3600
 FONTAWESOME_FREE_ONLY=true
-FONTAWESOME_MAX_RESULTS=50
+FONTAWESOME_MAX_RESULTS=100
+
+# CSS Strategy (self-hosted, kit, or cdn)
+FONTAWESOME_CSS_STRATEGY=self-hosted
+FONTAWESOME_CSS_PATH=/vendor/fontawesome/css/all.min.css
 
 # Only needed for Pro icons
 FONTAWESOME_API_TOKEN=your-api-token-here
 
 # Pro CSS loading options (pick one)
 FONTAWESOME_KIT_ID=abc123def
-FONTAWESOME_PRO_CSS_URL=https://pro.fontawesome.com/releases/v6.5.0/css/all.css
-FONTAWESOME_LOCAL_CSS=css/fontawesome-pro.css
 ```
 
 ### Getting a Font Awesome API Token
@@ -317,17 +405,6 @@ To access Font Awesome Pro icons or improve API rate limits, you'll need an API 
 
 ## Displaying Icons
 
-### Stored Value Format
-
-The field stores the complete Font Awesome class string:
-
-```
-"fa-solid fa-user"
-"fa-regular fa-arrow-right"
-"fa-brands fa-github"
-"fa-sharp fa-solid fa-house"
-```
-
 ### In Blade Views
 
 ```html
@@ -336,6 +413,22 @@ The field stores the complete Font Awesome class string:
 
 <!-- Or with Font Awesome Kit -->
 <i class="fa-solid fa-{{ $iconName }}"></i>
+```
+
+### With Tailwind/Vite
+
+If rendering icons in your frontend (outside Nova), make sure Font Awesome CSS is loaded:
+
+```html
+<!-- In your layout -->
+<link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+```
+
+Or via your `vite.config.js`:
+
+```js
+// Import in your JS
+import '/public/vendor/fontawesome/css/all.min.css';
 ```
 
 ### Helper Method (Optional)
@@ -362,6 +455,7 @@ Visit `/nova-vendor/nova-fontawesome/debug` to check:
 - Token exchange status
 - Search functionality
 - Cache status
+- CSS configuration
 
 ### Icons not loading
 
@@ -369,6 +463,13 @@ Visit `/nova-vendor/nova-fontawesome/debug` to check:
 2. Check that your server can reach `api.fontawesome.com`
 3. Check Laravel logs for errors
 4. Clear the cache: `php artisan cache:clear`
+
+### CSS not loading / Icons showing as boxes
+
+1. Check your CSS strategy in config
+2. For self-hosted: verify files exist in `public/vendor/fontawesome/`
+3. For Kit: verify your Kit ID is correct
+4. Check browser console for 404 errors
 
 ### Styles not filtering correctly
 
@@ -379,12 +480,28 @@ Make sure you're using valid style names: `solid`, `regular`, `light`, `thin`, `
 1. Verify you have an active Font Awesome Pro subscription
 2. Check that your API token is correctly set in `.env`
 3. Use the debug endpoint to verify token exchange
+4. Ensure your CSS strategy supports Pro icons (self-hosted or kit)
 
 ## Upgrading
 
-See [UPGRADE.md](UPGRADE.md) for upgrade instructions between major versions.
+### From v1.x to v2.x
+
+1. Update `composer.json` requirements
+2. Update `package.json` - Vite replaces Laravel Mix
+3. Rebuild assets: `npm install && npm run build`
+4. Update config file if published (new `css` section replaces `pro_css`)
+5. See [UPGRADE.md](UPGRADE.md) for detailed migration guide
 
 ## Development
+
+### Building Assets
+
+```bash
+npm install
+npm run dev      # Development build
+npm run build    # Production build
+npm run watch    # Watch mode
+```
 
 ### Running Tests
 

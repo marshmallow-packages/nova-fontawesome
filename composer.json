@@ -1,16 +1,18 @@
 {
     "name": "marshmallow/nova-fontawesome",
-    "description": "A Font Awesome 6 Field for Laravel Nova 5",
+    "description": "A Font Awesome 6/7 Field for Laravel Nova 5",
     "keywords": [
         "laravel",
         "nova",
         "nova 5",
         "fontawesome 6",
+        "fontawesome 7",
         "fontawesome"
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3|^8.4|^8.5",
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
         "laravel/nova": "^5.0"
     },
     "require-dev": {

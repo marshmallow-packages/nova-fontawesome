@@ -1,26 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Marshmallow\NovaFontAwesome\Http\Controllers;
 
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use Marshmallow\NovaFontAwesome\Services\IconClassConverter;
 use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
 
 class FontAwesomeController extends Controller
 {
     /**
-     * The FontAwesome API service.
-     */
-    protected FontAwesomeApiService $apiService;
-
-    /**
      * Create a new controller instance.
      */
-    public function __construct(FontAwesomeApiService $apiService)
-    {
-        $this->apiService = $apiService;
-    }
+    public function __construct(
+        protected FontAwesomeApiService $apiService,
+        protected IconClassConverter $iconClassConverter
+    ) {}
 
     /**
      * Configure the API service from request parameters.
@@ -37,12 +35,15 @@ class FontAwesomeController extends Controller
         $this->apiService->configure([
             'version' => $request->input('version', config('nova-fontawesome.version', '6.x')),
             'freeOnly' => $freeOnly,
-            'maxResults' => $request->input('first', config('nova-fontawesome.max_results', 25)),
+            'maxResults' => $request->input('first', config('nova-fontawesome.max_results', 100)),
         ]);
     }
 
     /**
      * Search icons via the Font Awesome GraphQL API.
+     *
+     * Supports pagination via cursor parameter.
+     * Returns: { icons: [], hasMore: bool, cursor: string|null, total: int }
      */
     public function search(Request $request): JsonResponse
     {
@@ -54,6 +55,7 @@ class FontAwesomeController extends Controller
             'style' => 'nullable|string',
             'styles' => 'nullable|array',
             'freeOnly' => 'nullable',
+            'cursor' => 'nullable|string',
         ]);
 
         $this->configureServiceFromRequest($request);
@@ -62,12 +64,27 @@ class FontAwesomeController extends Controller
         $family = $request->input('family');
         $style = $request->input('style');
         $styles = $request->input('styles', []);
+        $cursor = $request->input('cursor');
 
-        $results = $this->apiService->search($query, $family, $style);
+        $result = $this->apiService->search($query, $family, $style, $cursor);
+
+        // Check for API error
+        if (isset($result['error']) && $result['error']) {
+            return response()->json([
+                'error' => true,
+                'message' => $result['message'] ?? 'Font Awesome API is currently unavailable.',
+                'icons' => [],
+                'hasMore' => false,
+                'cursor' => null,
+                'total' => 0,
+            ]);
+        }
+
+        $icons = $result['icons'] ?? [];
 
         // Filter by styles if specified
-        if (! empty($styles)) {
-            $results = array_filter($results, function ($icon) use ($styles) {
+        if (!empty($styles)) {
+            $icons = array_filter($icons, function ($icon) use ($styles) {
                 foreach ($icon['familyStylesByLicense'] ?? [] as $license => $licenseStyles) {
                     foreach ($licenseStyles as $styleData) {
                         if (in_array($styleData['style'], $styles)) {
@@ -78,12 +95,15 @@ class FontAwesomeController extends Controller
 
                 return false;
             });
-            $results = array_values($results);
+            $icons = array_values($icons);
         }
 
         return response()->json([
-            'success' => true,
-            'icons' => $results,
+            'icons' => $icons,
+            'hasMore' => $result['hasMore'] ?? false,
+            'cursor' => $result['cursor'] ?? null,
+            'total' => $result['total'] ?? count($icons),
+            'fallback' => $result['fallback'] ?? false,
         ]);
     }
 
@@ -99,31 +119,15 @@ class FontAwesomeController extends Controller
 
         $icon = $this->apiService->getIcon($name, $family, $style);
 
-        if (! $icon) {
+        if (!$icon) {
             return response()->json([
-                'success' => false,
+                'error' => true,
                 'message' => 'Icon not found',
             ], 404);
         }
 
         return response()->json([
-            'success' => true,
             'icon' => $icon,
-        ]);
-    }
-
-    /**
-     * Get popular/featured icons (no search query).
-     */
-    public function popular(Request $request): JsonResponse
-    {
-        $this->configureServiceFromRequest($request);
-
-        $icons = $this->apiService->getPopularIcons();
-
-        return response()->json([
-            'success' => true,
-            'icons' => $icons,
         ]);
     }
 
@@ -137,8 +141,58 @@ class FontAwesomeController extends Controller
         $metadata = $this->apiService->getMetadata();
 
         return response()->json([
-            'success' => true,
             'metadata' => $metadata,
+        ]);
+    }
+
+    /**
+     * Get CSS configuration for frontend.
+     */
+    public function config(): JsonResponse
+    {
+        $cssConfig = config('nova-fontawesome.css', []);
+        $strategy = $cssConfig['strategy'] ?? 'self-hosted';
+
+        $response = [
+            'strategy' => $strategy,
+        ];
+
+        switch ($strategy) {
+            case 'self-hosted':
+                $response['cssPath'] = $cssConfig['path'] ?? '/vendor/fontawesome/css/all.min.css';
+                break;
+
+            case 'kit':
+                $response['kitId'] = $cssConfig['kit_id'] ?? null;
+                break;
+
+            case 'cdn':
+                $version = $cssConfig['cdn_version'] ?? '6.5.1';
+                $response['cdnUrl'] = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/{$version}/css/all.min.css";
+                break;
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Convert legacy icon class format to modern FA6/FA7 format.
+     */
+    public function convert(Request $request): JsonResponse
+    {
+        $request->validate([
+            'class' => 'required|string',
+        ]);
+
+        $classString = $request->input('class');
+        $converted = $this->iconClassConverter->convert($classString);
+        $isLegacy = $this->iconClassConverter->isLegacyFormat($classString);
+
+        return response()->json([
+            'original' => $classString,
+            'converted' => $converted,
+            'isLegacy' => $isLegacy,
+            'parsed' => $this->iconClassConverter->parse($classString),
         ]);
     }
 
@@ -152,9 +206,10 @@ class FontAwesomeController extends Controller
         $diagnostics = $this->apiService->runDiagnostics();
 
         return response()->json([
-            'success' => $diagnostics['status'] === 'healthy',
+            'status' => $diagnostics['status'],
             'diagnostics' => $diagnostics,
             'configuration' => $this->apiService->getConfiguration(),
+            'cssConfig' => config('nova-fontawesome.css'),
         ]);
     }
 
@@ -168,8 +223,10 @@ class FontAwesomeController extends Controller
         $icons = $this->apiService->getFallbackIcons($query);
 
         return response()->json([
-            'success' => true,
             'icons' => $icons,
+            'hasMore' => false,
+            'cursor' => null,
+            'total' => count($icons),
             'fallback' => true,
         ]);
     }
