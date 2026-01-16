@@ -287,7 +287,7 @@ export default {
         },
     },
     created() {
-        this.debouncedSearch = debounce(this.searchIcons, 300);
+        this.debouncedSearch = debounce(this.searchIcons, 500);
     },
     async mounted() {
         // Load metadata on mount

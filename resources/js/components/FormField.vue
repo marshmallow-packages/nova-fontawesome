@@ -2,20 +2,31 @@
     <DefaultField :field="field">
         <template #field>
             <div>
-                <div v-if="value" class="display-icon-wrapper mb-4 flex items-center gap-4">
+                <div
+                    v-if="value"
+                    class="display-icon-wrapper mb-4 flex items-center gap-4"
+                >
                     <div
                         class="display-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
                         style="width: 4rem; height: 4rem"
                     >
                         <button
                             type="button"
-                            class="close-icon z-20 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 hover:bg-red-300 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all cursor-pointer"
+                            class="close-icon z-20 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-red-400 hover:text-white p-0.5 rounded-full shadow-sm transition-all cursor-pointer"
+                            style="
+                                width: 18px;
+                                height: 18px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            "
                             @click="clear"
                             title="Clear icon"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                class="w-4 h-4 mx-auto"
+                                width="10"
+                                height="10"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
                             >
@@ -29,8 +40,14 @@
                         <i :class="value" style="font-size: 2rem"></i>
                     </div>
                     <div class="icon-info text-sm">
-                        <div class="font-medium text-gray-700 dark:text-gray-300">{{ iconName }}</div>
-                        <div class="text-gray-500 dark:text-gray-400 text-xs">{{ iconFamily }} / {{ iconStyle }}</div>
+                        <div
+                            class="font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            {{ iconName }}
+                        </div>
+                        <div class="text-gray-500 dark:text-gray-400 text-xs">
+                            {{ iconFamily }} / {{ iconStyle }}
+                        </div>
                     </div>
                 </div>
                 <input
@@ -103,30 +120,31 @@
                 return "";
             },
             iconName() {
-                if (!this.value) return '';
+                if (!this.value) return "";
                 // Extract icon name from class string (e.g., "fa-solid fa-house" -> "house")
                 const match = this.value.match(/fa-([a-z0-9-]+)$/i);
                 return match ? match[1] : this.value;
             },
             iconFamily() {
-                if (!this.value) return '';
+                if (!this.value) return "";
                 // Determine family from class string
-                if (this.value.includes('fa-brands')) return 'brands';
-                if (this.value.includes('fa-sharp-duotone')) return 'sharp-duotone';
-                if (this.value.includes('fa-sharp')) return 'sharp';
-                if (this.value.includes('fa-duotone')) return 'duotone';
-                return 'classic';
+                if (this.value.includes("fa-brands")) return "brands";
+                if (this.value.includes("fa-sharp-duotone"))
+                    return "sharp-duotone";
+                if (this.value.includes("fa-sharp")) return "sharp";
+                if (this.value.includes("fa-duotone")) return "duotone";
+                return "classic";
             },
             iconStyle() {
-                if (!this.value) return '';
+                if (!this.value) return "";
                 // Determine style from class string
-                if (this.value.includes('fa-brands')) return 'brands';
-                if (this.value.includes('fa-solid')) return 'solid';
-                if (this.value.includes('fa-regular')) return 'regular';
-                if (this.value.includes('fa-light')) return 'light';
-                if (this.value.includes('fa-thin')) return 'thin';
-                if (this.value.includes('fa-duotone')) return 'duotone';
-                return 'solid';
+                if (this.value.includes("fa-brands")) return "brands";
+                if (this.value.includes("fa-solid")) return "solid";
+                if (this.value.includes("fa-regular")) return "regular";
+                if (this.value.includes("fa-light")) return "light";
+                if (this.value.includes("fa-thin")) return "thin";
+                if (this.value.includes("fa-duotone")) return "duotone";
+                return "solid";
             },
         },
         methods: {

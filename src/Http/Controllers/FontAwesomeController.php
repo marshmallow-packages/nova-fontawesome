@@ -82,7 +82,40 @@ class FontAwesomeController extends Controller
 
         $icons = $result['icons'] ?? [];
 
-        // Filter by styles if specified
+        // Get configured families and styles
+        $configFamilies = config('nova-fontawesome.families', []);
+        $configStyles = config('nova-fontawesome.styles', []);
+
+        // Filter icons by configured families and styles
+        if (!empty($configFamilies) || !empty($configStyles)) {
+            $icons = array_filter($icons, function ($icon) use ($configFamilies, $configStyles) {
+                $selectedStyle = $icon['_selectedStyle'] ?? null;
+
+                if ($selectedStyle) {
+                    $familyMatch = empty($configFamilies) || in_array($selectedStyle['family'] ?? 'classic', $configFamilies);
+                    $styleMatch = empty($configStyles) || in_array($selectedStyle['style'] ?? 'solid', $configStyles);
+
+                    return $familyMatch && $styleMatch;
+                }
+
+                // Fallback: check familyStylesByLicense
+                foreach ($icon['familyStylesByLicense'] ?? [] as $license => $licenseStyles) {
+                    foreach ($licenseStyles as $styleData) {
+                        $familyMatch = empty($configFamilies) || in_array($styleData['family'] ?? 'classic', $configFamilies);
+                        $styleMatch = empty($configStyles) || in_array($styleData['style'] ?? 'solid', $configStyles);
+
+                        if ($familyMatch && $styleMatch) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            });
+            $icons = array_values($icons);
+        }
+
+        // Filter by styles if specified in request (additional filtering)
         if (!empty($styles)) {
             $icons = array_filter($icons, function ($icon) use ($styles) {
                 foreach ($icon['familyStylesByLicense'] ?? [] as $license => $licenseStyles) {
@@ -139,6 +172,24 @@ class FontAwesomeController extends Controller
         $this->configureServiceFromRequest($request);
 
         $metadata = $this->apiService->getMetadata();
+
+        // Filter metadata based on config
+        $configFamilies = config('nova-fontawesome.families', []);
+        $configStyles = config('nova-fontawesome.styles', []);
+
+        if (!empty($configFamilies) && !empty($metadata['families'])) {
+            $metadata['families'] = array_values(array_filter(
+                $metadata['families'],
+                fn ($family) => in_array($family['id'], $configFamilies)
+            ));
+        }
+
+        if (!empty($configStyles) && !empty($metadata['styles'])) {
+            $metadata['styles'] = array_values(array_filter(
+                $metadata['styles'],
+                fn ($style) => in_array($style['id'], $configStyles)
+            ));
+        }
 
         return response()->json([
             'metadata' => $metadata,
