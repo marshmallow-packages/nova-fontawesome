@@ -2,10 +2,10 @@
     <PanelItem :field="field">
         <template #value>
             <span
-                class="fontawesome-detail-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
-                style="width: 2.5rem; height: 2.5rem"
+                class="fontawesome-detail-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-2 border border-gray"
+                style="width: 3rem; height: 3rem"
             >
-                <i v-if="field.value" :class="field.value"></i>
+                <i v-if="field.value" :class="field.value" style="font-size: 1.5rem"></i>
             </span>
         </template>
     </PanelItem>

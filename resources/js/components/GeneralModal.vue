@@ -714,26 +714,36 @@ export default {
 };
 </script>
 
-<style scoped>
-.icon-box {
+<style>
+/* GeneralModal styles - not scoped to ensure proper inheritance */
+.fontawesome-modal .icon-box {
     width: calc(16.666% - 0.5rem);
     aspect-ratio: 1 / 1;
     border: 1px solid rgb(var(--colors-gray-200));
     border-radius: 0.375rem;
     margin: 0.25rem;
-    padding: 0.75rem;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-.dark .icon-box {
+.dark .fontawesome-modal .icon-box {
     border-color: rgb(var(--colors-gray-700));
 }
 
-.icon-box:hover {
+.fontawesome-modal .icon-box:hover {
     border-color: rgb(var(--colors-primary-500));
     color: rgb(var(--colors-primary-500));
+    background-color: rgb(var(--colors-primary-50));
 }
 
-.icon-svg-container {
+.dark .fontawesome-modal .icon-box:hover {
+    background-color: rgb(var(--colors-primary-900) / 0.3);
+}
+
+.fontawesome-modal .icon-svg-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -743,7 +753,7 @@ export default {
     overflow: hidden;
 }
 
-.icon-svg-container :deep(svg) {
+.fontawesome-modal .icon-svg-container svg {
     max-width: 100%;
     max-height: 100%;
     width: auto;
@@ -751,13 +761,13 @@ export default {
     fill: currentColor;
 }
 
-.icon-svg-container i {
+.fontawesome-modal .icon-svg-container i {
     font-size: 1.75rem;
     max-width: 100%;
     text-align: center;
 }
 
-.icon-name {
+.fontawesome-modal .icon-name {
     display: block;
     font-size: 0.7rem;
     margin-top: 0.5rem;
@@ -771,7 +781,7 @@ export default {
     max-width: 100%;
 }
 
-.icon-meta {
+.fontawesome-modal .icon-meta {
     display: block;
     font-size: 0.6rem;
     margin-top: 0.25rem;
@@ -782,26 +792,27 @@ export default {
     max-width: 100%;
 }
 
-.dark .icon-name {
+.dark .fontawesome-modal .icon-name {
     background: rgb(var(--colors-gray-700));
     color: rgb(var(--colors-gray-300));
 }
 
-.dark .icon-meta {
+.dark .fontawesome-modal .icon-meta {
     color: rgb(var(--colors-gray-400));
 }
 
-.skeleton-box {
+.fontawesome-modal .skeleton-box {
     width: 100%;
-    flex: 1;
-    display: inline-block;
+    height: 40px;
+    display: block;
 }
 
-.skeleton-text {
+.fontawesome-modal .skeleton-text {
     height: 1.25rem;
+    width: 80%;
 }
 
-@keyframes pulse {
+@keyframes fontawesome-pulse {
     0%,
     100% {
         opacity: 1;
@@ -811,18 +822,18 @@ export default {
     }
 }
 
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.fontawesome-modal .animate-pulse {
+    animation: fontawesome-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @media (max-width: 1279px) {
-    .icon-box {
+    .fontawesome-modal .icon-box {
         width: calc(25% - 0.5rem);
     }
 }
 
 @media (max-width: 900px) {
-    .icon-box {
+    .fontawesome-modal .icon-box {
         width: calc(50% - 0.5rem);
     }
 }

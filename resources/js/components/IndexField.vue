@@ -1,10 +1,10 @@
 <template>
     <span
         v-if="hasValue"
-        class="fontawesome-index-icon inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray text-gray-700 dark:text-gray-200"
-        style="width: 2rem; height: 2rem; font-size: 1rem"
+        class="fontawesome-index-icon inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-2 border border-gray text-gray-700 dark:text-gray-200"
+        style="width: 2.5rem; height: 2.5rem"
     >
-        <i :class="fieldValue" style="font-size: 1rem"></i>
+        <i :class="fieldValue" style="font-size: 1.25rem"></i>
     </span>
     <span v-else>&mdash;</span>
 </template>

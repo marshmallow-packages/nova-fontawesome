@@ -26,7 +26,7 @@
                                 />
                             </svg>
                         </button>
-                        <i :class="value"></i>
+                        <i :class="value" style="font-size: 2rem"></i>
                     </span>
                 </div>
                 <input
