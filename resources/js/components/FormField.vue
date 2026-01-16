@@ -2,9 +2,9 @@
     <DefaultField :field="field">
         <template #field>
             <div>
-                <div v-if="value" class="display-icon mb-4">
-                    <span
-                        class="relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
+                <div v-if="value" class="display-icon-wrapper mb-4 flex items-center gap-4">
+                    <div
+                        class="display-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
                         style="width: 4rem; height: 4rem"
                     >
                         <button
@@ -27,7 +27,11 @@
                             </svg>
                         </button>
                         <i :class="value" style="font-size: 2rem"></i>
-                    </span>
+                    </div>
+                    <div class="icon-info text-sm">
+                        <div class="font-medium text-gray-700 dark:text-gray-300">{{ iconName }}</div>
+                        <div class="text-gray-500 dark:text-gray-400 text-xs">{{ iconFamily }} / {{ iconStyle }}</div>
+                    </div>
                 </div>
                 <input
                     :id="field.name"
@@ -97,6 +101,32 @@
                     return this.defaultIconType + " fa-" + this.defaultIcon;
                 }
                 return "";
+            },
+            iconName() {
+                if (!this.value) return '';
+                // Extract icon name from class string (e.g., "fa-solid fa-house" -> "house")
+                const match = this.value.match(/fa-([a-z0-9-]+)$/i);
+                return match ? match[1] : this.value;
+            },
+            iconFamily() {
+                if (!this.value) return '';
+                // Determine family from class string
+                if (this.value.includes('fa-brands')) return 'brands';
+                if (this.value.includes('fa-sharp-duotone')) return 'sharp-duotone';
+                if (this.value.includes('fa-sharp')) return 'sharp';
+                if (this.value.includes('fa-duotone')) return 'duotone';
+                return 'classic';
+            },
+            iconStyle() {
+                if (!this.value) return '';
+                // Determine style from class string
+                if (this.value.includes('fa-brands')) return 'brands';
+                if (this.value.includes('fa-solid')) return 'solid';
+                if (this.value.includes('fa-regular')) return 'regular';
+                if (this.value.includes('fa-light')) return 'light';
+                if (this.value.includes('fa-thin')) return 'thin';
+                if (this.value.includes('fa-duotone')) return 'duotone';
+                return 'solid';
             },
         },
         methods: {
@@ -244,69 +274,11 @@
         border-color: rgb(var(--colors-red-500));
     }
 
-    .icon-box {
-        width: 11.5%;
-        aspect-ratio: 3 / 2;
-        border: 1px solid rgb(var(--colors-gray-200));
-        border-radius: 0.375rem;
-        margin: 0.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .dark .icon-box {
-        border-color: rgb(var(--colors-gray-700));
-    }
-
-    .icon-box:hover {
-        border-color: rgb(var(--colors-primary-500));
-        color: rgb(var(--colors-primary-500));
-        background-color: rgb(var(--colors-primary-50));
-    }
-
-    .dark .icon-box:hover {
-        background-color: rgb(var(--colors-primary-900) / 0.3);
-    }
-
     .border-gray {
         border-color: rgb(var(--colors-gray-300));
     }
 
     .dark .border-gray {
         border-color: rgb(var(--colors-gray-700));
-    }
-
-    @media (max-width: 1279px) {
-        .icon-box {
-            width: 24%;
-        }
-    }
-
-    @media (max-width: 900px) {
-        .icon-box {
-            width: 49%;
-        }
-        .h-90p {
-            height: 80%;
-        }
-    }
-
-    .skeleton-box {
-        display: inline-block;
-    }
-
-    @keyframes pulse {
-        0%,
-        100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 </style>

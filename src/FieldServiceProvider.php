@@ -22,6 +22,7 @@ class FieldServiceProvider extends ServiceProvider
 
         Nova::serving(function (ServingNova $event): void {
             Nova::script('nova-fontawesome', __DIR__ . '/../dist/js/nova-fontawesome.js');
+            Nova::style('nova-fontawesome', __DIR__ . '/../dist/css/nova-fontawesome.css');
 
             // Load Font Awesome CSS based on strategy
             $this->loadFontAwesomeCss();

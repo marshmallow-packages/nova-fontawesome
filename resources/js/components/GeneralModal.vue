@@ -1,14 +1,14 @@
 <template>
     <Modal
         :show="true"
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden fontawesome-modal"
         size="4xl"
         role="dialog"
         @close="handleClose"
     >
         <ModalHeader v-text="__('novaFontawesome.modalTitle')" />
 
-        <ModalContent class="space-y-2 px-6">
+        <ModalContent class="fontawesome-modal space-y-2 px-6">
             <div class="flex w-full gap-4">
                 <div class="flex w-1/2 gap-4">
                     <div class="w-1/2">
@@ -54,28 +54,25 @@
             </div>
 
             <div
-                class="fontawesome-inner overflow-y-auto"
+                class="fontawesome-inner fontawesome-modal overflow-y-auto"
                 style="max-height: 60vh"
                 @scroll="onScroll"
                 ref="iconContainer"
             >
                 <!-- Loading state -->
                 <div v-if="isLoading && displayedIcons.length === 0">
-                    <div class="flex flex-wrap items-stretch">
+                    <div class="flex flex-wrap items-stretch fontawesome-icon-grid">
                         <div
                             v-for="n in 24"
                             :key="'skeleton-' + n"
-                            class="inner flex items-center justify-center text-center icon-box"
+                            class="icon-box"
                         >
-                            <div class="p-2 w-full">
-                                <div
-                                    class="icon-svg-container skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"
-                                ></div>
-                                <span
-                                    class="icon-name skeleton-text animate-pulse bg-gray-200 dark:bg-gray-700 rounded block mt-2"
-                                    >&nbsp;</span
-                                >
-                            </div>
+                            <div
+                                class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"
+                            ></div>
+                            <span
+                                class="skeleton-text animate-pulse bg-gray-200 dark:bg-gray-700 rounded mt-2"
+                            >&nbsp;</span>
                         </div>
                     </div>
                 </div>
@@ -114,13 +111,13 @@
 
                 <!-- Icons grid -->
                 <div
-                    class="flex flex-wrap items-stretch"
+                    class="flex flex-wrap items-stretch fontawesome-icon-grid"
                     v-else-if="displayedIcons.length > 0"
                 >
                     <div
                         v-for="(icon, index) in displayedIcons"
                         :key="icon._uniqueId || icon.id || index"
-                        class="inner flex flex-col items-center justify-center text-center icon-box cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                        class="icon-box cursor-pointer"
                         @click="saveIcon(icon)"
                     >
                         <div class="icon-svg-container">
@@ -715,8 +712,8 @@ export default {
 </script>
 
 <style>
-/* GeneralModal styles - not scoped to ensure proper inheritance */
-.fontawesome-modal .icon-box {
+/* FontAwesome icon grid styles */
+.fontawesome-icon-grid .icon-box {
     width: calc(16.666% - 0.5rem);
     aspect-ratio: 1 / 1;
     border: 1px solid rgb(var(--colors-gray-200));
@@ -727,23 +724,24 @@ export default {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    transition: all 0.15s ease;
 }
 
-.dark .fontawesome-modal .icon-box {
+.dark .fontawesome-icon-grid .icon-box {
     border-color: rgb(var(--colors-gray-700));
 }
 
-.fontawesome-modal .icon-box:hover {
+.fontawesome-icon-grid .icon-box:hover {
     border-color: rgb(var(--colors-primary-500));
     color: rgb(var(--colors-primary-500));
     background-color: rgb(var(--colors-primary-50));
 }
 
-.dark .fontawesome-modal .icon-box:hover {
-    background-color: rgb(var(--colors-primary-900) / 0.3);
+.dark .fontawesome-icon-grid .icon-box:hover {
+    background-color: rgba(var(--colors-primary-900), 0.3);
 }
 
-.fontawesome-modal .icon-svg-container {
+.fontawesome-icon-grid .icon-svg-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -753,7 +751,7 @@ export default {
     overflow: hidden;
 }
 
-.fontawesome-modal .icon-svg-container svg {
+.fontawesome-icon-grid .icon-svg-container svg {
     max-width: 100%;
     max-height: 100%;
     width: auto;
@@ -761,13 +759,13 @@ export default {
     fill: currentColor;
 }
 
-.fontawesome-modal .icon-svg-container i {
+.fontawesome-icon-grid .icon-svg-container i {
     font-size: 1.75rem;
     max-width: 100%;
     text-align: center;
 }
 
-.fontawesome-modal .icon-name {
+.fontawesome-icon-grid .icon-name {
     display: block;
     font-size: 0.7rem;
     margin-top: 0.5rem;
@@ -781,7 +779,7 @@ export default {
     max-width: 100%;
 }
 
-.fontawesome-modal .icon-meta {
+.fontawesome-icon-grid .icon-meta {
     display: block;
     font-size: 0.6rem;
     margin-top: 0.25rem;
@@ -792,22 +790,22 @@ export default {
     max-width: 100%;
 }
 
-.dark .fontawesome-modal .icon-name {
+.dark .fontawesome-icon-grid .icon-name {
     background: rgb(var(--colors-gray-700));
     color: rgb(var(--colors-gray-300));
 }
 
-.dark .fontawesome-modal .icon-meta {
+.dark .fontawesome-icon-grid .icon-meta {
     color: rgb(var(--colors-gray-400));
 }
 
-.fontawesome-modal .skeleton-box {
+.fontawesome-icon-grid .skeleton-box {
     width: 100%;
     height: 40px;
     display: block;
 }
 
-.fontawesome-modal .skeleton-text {
+.fontawesome-icon-grid .skeleton-text {
     height: 1.25rem;
     width: 80%;
 }
@@ -822,18 +820,18 @@ export default {
     }
 }
 
-.fontawesome-modal .animate-pulse {
+.fontawesome-icon-grid .animate-pulse {
     animation: fontawesome-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @media (max-width: 1279px) {
-    .fontawesome-modal .icon-box {
+    .fontawesome-icon-grid .icon-box {
         width: calc(25% - 0.5rem);
     }
 }
 
 @media (max-width: 900px) {
-    .fontawesome-modal .icon-box {
+    .fontawesome-icon-grid .icon-box {
         width: calc(50% - 0.5rem);
     }
 }
