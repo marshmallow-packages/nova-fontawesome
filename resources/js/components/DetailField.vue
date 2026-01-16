@@ -1,12 +1,19 @@
 <template>
     <PanelItem :field="field">
         <template #value>
-            <span
-                class="fontawesome-detail-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-2 border border-gray"
-                style="width: 3rem; height: 3rem"
-            >
-                <i v-if="field.value" :class="field.value" style="font-size: 1.5rem"></i>
-            </span>
+            <div v-if="field.value" class="flex items-center gap-4">
+                <span
+                    class="fontawesome-detail-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-2 border border-gray"
+                    style="width: 3rem; height: 3rem"
+                >
+                    <i :class="field.value" style="font-size: 1.5rem"></i>
+                </span>
+                <div class="icon-info text-sm">
+                    <div class="font-medium text-gray-700 dark:text-gray-300">{{ iconName }}</div>
+                    <div class="text-gray-500 dark:text-gray-400 text-xs">{{ iconFamily }} / {{ iconStyle }}</div>
+                </div>
+            </div>
+            <span v-else>&mdash;</span>
         </template>
     </PanelItem>
 </template>
@@ -14,6 +21,31 @@
 <script>
     export default {
         props: ["resource", "resourceName", "resourceId", "field"],
+        computed: {
+            iconName() {
+                if (!this.field.value) return '';
+                const match = this.field.value.match(/fa-([a-z0-9-]+)$/i);
+                return match ? match[1] : this.field.value;
+            },
+            iconFamily() {
+                if (!this.field.value) return '';
+                if (this.field.value.includes('fa-brands')) return 'brands';
+                if (this.field.value.includes('fa-sharp-duotone')) return 'sharp-duotone';
+                if (this.field.value.includes('fa-sharp')) return 'sharp';
+                if (this.field.value.includes('fa-duotone')) return 'duotone';
+                return 'classic';
+            },
+            iconStyle() {
+                if (!this.field.value) return '';
+                if (this.field.value.includes('fa-brands')) return 'brands';
+                if (this.field.value.includes('fa-solid')) return 'solid';
+                if (this.field.value.includes('fa-regular')) return 'regular';
+                if (this.field.value.includes('fa-light')) return 'light';
+                if (this.field.value.includes('fa-thin')) return 'thin';
+                if (this.field.value.includes('fa-duotone')) return 'duotone';
+                return 'solid';
+            },
+        },
     };
 </script>
 

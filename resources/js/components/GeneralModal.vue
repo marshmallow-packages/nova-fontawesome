@@ -43,12 +43,12 @@
                 class="text-sm text-gray-500 dark:text-gray-400 py-1"
             >
                 <span v-if="isFiltered">
-                    {{ __('novaFontawesome.resultsCountFiltered', { shown: displayedIcons.length, total: icons.length }) }}
+                    {{ displayedIcons.length }} / {{ icons.length }} results
                 </span>
                 <span v-else>
-                    {{ __('novaFontawesome.resultsCount', { count: displayedIcons.length }) }}
+                    {{ displayedIcons.length }} results
                     <span v-if="hasMore" class="text-gray-400 dark:text-gray-500">
-                        ({{ __('novaFontawesome.loadingMore').replace('...', '') }})
+                        +
                     </span>
                 </span>
             </div>
