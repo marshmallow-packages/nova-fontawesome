@@ -37,6 +37,22 @@
                 </div>
             </div>
 
+            <!-- Result count -->
+            <div
+                v-if="hasSearched && !isLoading && !apiError && displayedIcons.length > 0"
+                class="text-sm text-gray-500 dark:text-gray-400 py-1"
+            >
+                <span v-if="isFiltered">
+                    {{ __('novaFontawesome.resultsCountFiltered', { shown: displayedIcons.length, total: icons.length }) }}
+                </span>
+                <span v-else>
+                    {{ __('novaFontawesome.resultsCount', { count: displayedIcons.length }) }}
+                    <span v-if="hasMore" class="text-gray-400 dark:text-gray-500">
+                        ({{ __('novaFontawesome.loadingMore').replace('...', '') }})
+                    </span>
+                </span>
+            </div>
+
             <div
                 class="fontawesome-inner overflow-y-auto"
                 style="max-height: 60vh"
@@ -229,6 +245,10 @@ export default {
         },
         fuzzySearchThreshold() {
             return this.field.fuzzySearchThreshold || 0.3;
+        },
+        isFiltered() {
+            return (this.filter.family && this.filter.family !== 'all') ||
+                   (this.filter.style && this.filter.style !== 'all');
         },
         familyOptions() {
             const totalCount = Object.values(this.filterCounts.families).reduce((a, b) => a + b, 0);
