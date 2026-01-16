@@ -43,9 +43,10 @@ return [
     |
     | The icon styles to show by default.
     | Options: solid, regular, light, thin, duotone, brands
+    | Note: light, thin, and duotone require Font Awesome Pro.
     |
     */
-    'styles' => ['solid', 'regular', 'brands'],
+    'styles' => ['solid', 'regular', 'light', 'thin', 'duotone', 'brands'],
 
     /*
     |--------------------------------------------------------------------------
@@ -57,7 +58,7 @@ return [
     | Note: duotone, sharp, and sharp-duotone require Font Awesome Pro.
     |
     */
-    'families' => ['classic', 'brands'],
+    'families' => ['classic', 'sharp', 'duotone', 'sharp-duotone', 'brands'],
 
     /*
     |--------------------------------------------------------------------------
