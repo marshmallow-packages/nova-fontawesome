@@ -1,7 +1,3 @@
-const mix = require("laravel-mix");
-const webpack = require("webpack");
-const path = require("path");
-
 class NovaExtension {
     name() {
         return "nova-extension";
@@ -11,24 +7,23 @@ class NovaExtension {
         this.name = name;
     }
 
-    webpackPlugins() {
-        return new webpack.ProvidePlugin({
-            _: "lodash",
-            Errors: "form-backend-validation",
-        });
+    webpackRules() {
+        return {
+            test: /\.(postcss)$/,
+            use: [
+                "vue-style-loader",
+                { loader: "css-loader", options: { importLoaders: 1 } },
+                "postcss-loader",
+            ],
+        };
     }
 
     webpackConfig(webpackConfig) {
         webpackConfig.externals = {
             vue: "Vue",
-        };
-
-        webpackConfig.resolve.alias = {
-            ...(webpackConfig.resolve.alias || {}),
-            "laravel-nova": path.join(
-                __dirname,
-                "vendor/laravel/nova/resources/js/mixins/packages.js"
-            ),
+            "laravel-nova": "LaravelNova",
+            "laravel-nova-ui": "LaravelNovaUi",
+            "laravel-nova-util": "LaravelNovaUtil",
         };
 
         webpackConfig.output = {
@@ -37,4 +32,4 @@ class NovaExtension {
     }
 }
 
-mix.extend("nova", new NovaExtension());
+module.exports = NovaExtension;

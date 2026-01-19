@@ -1,22 +1,40 @@
 {
     "name": "marshmallow/nova-fontawesome",
-    "description": "A Font Awesome 6 Field for Laravel Nova 4",
+    "description": "A Font Awesome 6/7 Field for Laravel Nova 5",
     "keywords": [
         "laravel",
         "nova",
-        "nova 4",
+        "nova 5",
         "fontawesome 6",
+        "fontawesome 7",
         "fontawesome"
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.0|^8.1",
-        "laravel/nova": "^4.0|^5.0",
-        "outl1ne/nova-translations-loader": "^5.0"
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "laravel/nova": "^5.0"
+    },
+    "require-dev": {
+        "laravel/nova-devtool": "^1.8",
+        "laravel/pint": "^1.13",
+        "larastan/larastan": "^3.0",
+        "orchestra/testbench": "^9.0|^10.0",
+        "outl1ne/nova-translations-loader": "^5.0",
+        "pestphp/pest": "^3.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "suggest": {
+        "outl1ne/nova-translations-loader": "Required for translation support (^5.0)"
     },
     "autoload": {
         "psr-4": {
             "Marshmallow\\NovaFontAwesome\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Marshmallow\\NovaFontAwesome\\Tests\\": "tests/"
         }
     },
     "repositories": [
@@ -33,8 +51,19 @@
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "lint": "vendor/bin/pint",
+        "lint-check": "vendor/bin/pint --test",
+        "analyse": "vendor/bin/phpstan analyse"
+    }
 }

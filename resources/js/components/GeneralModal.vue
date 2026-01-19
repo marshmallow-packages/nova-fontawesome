@@ -1,528 +1,849 @@
 <template>
     <Modal
-        :show="true"
-        @confirm="handleConfirm"
-        @close="handleClose"
-        class="max-w-2xl flex flex-col h-full relative fontawesome-modal bg-white border bg-white dark:bg-gray-800 rounded-lg shadow-lg border-gray overflow-hidden"
+        :show="show"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden fontawesome-modal"
+        size="4xl"
+        role="dialog"
+        @close-via-escape="handleClose"
     >
-        <ModalHeader class="px-6 py-6 border-b relative border-gray">
-            {{ __("novaFontawesome.modalTitle") }}
+        <ModalHeader v-text="__('novaFontawesome.modalTitle')" />
 
-            <a href="#" class="fontawesome-close" @click.prevent="handleClose">
-                <i class="fa fa-times"></i>
-            </a>
-        </ModalHeader>
-
-        <div class="rounded-lg flex-1 relative h-90p bg-white">
-            <div class="flex px-2 py-4 flex-wrap border-b border-gray">
-                <div class="w-1/2 px-4">
-                    <SelectControl
-                        class="w-full"
-                        :placeholder="__('All')"
-                        v-model:selected="filter.type"
-                        @change="filter.type = $event"
-                    >
-                        <option value disabled="disabled">
-                            {{ __("novaFontawesome.selectType.default") }}
-                        </option>
-                        <option value="all">
-                            {{ __("novaFontawesome.selectType.placeholder") }}
-                        </option>
-                        <option
-                            v-for="def in definitions"
-                            :key="def"
-                            :value="stringToDefinition(def)"
-                            v-html="def"
-                        ></option>
-                    </SelectControl>
+        <ModalContent class="fontawesome-modal space-y-2 px-6">
+            <div class="flex w-full gap-4">
+                <div class="flex w-1/2 gap-4">
+                    <div class="w-1/2">
+                        <SelectControl
+                            v-model="filter.family"
+                            :options="familyOptions"
+                        />
+                    </div>
+                    <div class="w-1/2">
+                        <SelectControl
+                            v-model="filter.style"
+                            :options="styleOptions"
+                        />
+                    </div>
                 </div>
-                <div class="w-1/2 px-4">
+                <div class="w-1/2">
                     <input
                         type="text"
                         id="search"
-                        class="w-full form-control form-input form-input-bordered"
+                        class="w-full form-control form-input form-control-bordered"
                         :placeholder="__('novaFontawesome.search.placeholder')"
                         v-model="filter.search"
+                        @input="debouncedSearch"
+                        ref="searchInput"
                     />
                 </div>
             </div>
+
+            <!-- Result count -->
             <div
-                class="px-4 py-4 fontawesome-inner"
-                @scroll="onScroll"
-                id="iconContainer"
+                v-if="hasSearched && !isLoading && !apiError && displayedIcons.length > 0"
+                class="text-sm text-gray-500 dark:text-gray-400 py-1"
             >
-                <div
-                    class="py-6 text-center text-md font-semibold"
-                    v-if="isLoading"
-                >
-                    {{ __("novaFontawesome.loading") }}...
-                </div>
-                <div
-                    class="flex flex-wrap items-stretch -mx-2"
-                    v-else-if="icons.length > 0 && !isLoading"
-                >
-                    <div
-                        v-for="(icon, index) in chunkedIcons"
-                        :key="index"
-                        class="inner flex items-center justify-center text-center px-2 icon-box cursor-pointer"
-                        @click="saveIcon(icon)"
-                    >
+                <span v-if="isFiltered">
+                    {{ displayedIcons.length }} / {{ icons.length }} results
+                </span>
+                <span v-else>
+                    {{ displayedIcons.length }} results
+                    <span v-if="hasMore" class="text-gray-400 dark:text-gray-500">
+                        +
+                    </span>
+                </span>
+            </div>
+
+            <div
+                class="fontawesome-inner fontawesome-modal overflow-y-auto"
+                style="max-height: 60vh"
+                @scroll="onScroll"
+                ref="iconContainer"
+            >
+                <!-- Loading state -->
+                <div v-if="isLoading">
+                    <div class="flex flex-wrap items-stretch fontawesome-icon-grid">
                         <div
-                            :data-class="icon.prefix + ' fa-' + icon.iconName"
-                            class="p-4"
+                            v-for="n in 24"
+                            :key="'skeleton-' + n"
+                            class="icon-box"
                         >
-                            <i
-                                :class="icon.prefix + ' fa-' + icon.iconName"
-                            ></i>
+                            <div
+                                class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"
+                                style="width: 100%; height: 40px;"
+                            ></div>
                             <span
-                                class="icon-name"
-                                v-html="icon.iconName"
+                                class="skeleton-text animate-pulse bg-gray-200 dark:bg-gray-700 rounded mt-2"
+                                style="width: 80%; height: 1rem; display: block;"
                             ></span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <ModalFooter class="flex justify-end">
-            <div class="ml-auto">
-                <CancelButton
-                    component="button"
-                    type="button"
-                    dusk="cancel-action-button"
-                    @click.prevent="handleClose"
+                <!-- API Error state -->
+                <div
+                    v-else-if="apiError"
+                    class="py-12 text-center"
                 >
-                    {{ __("novaFontawesome.cancel") }}
-                </CancelButton>
+                    <div class="text-red-500 dark:text-red-400 mb-2">
+                        <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 font-medium">
+                        {{ apiErrorMessage }}
+                    </p>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                        {{ __('novaFontawesome.tryAgainLater') }}
+                    </p>
+                </div>
 
-                <LoadingButton
-                    class="ml-3"
-                    type="submit"
-                    ref="runButton"
-                    component="DefaultButton"
-                    :disabled="isLoading"
+                <!-- Empty state (before search) -->
+                <div
+                    v-else-if="!hasSearched && displayedIcons.length === 0"
+                    class="py-12 text-center"
+                >
+                    <div class="text-gray-400 dark:text-gray-500 mb-4">
+                        <i class="fa-solid fa-magnifying-glass text-4xl"></i>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 font-medium">
+                        {{ __('novaFontawesome.searchPrompt') }}
+                    </p>
+                    <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">
+                        {{ __('novaFontawesome.searchHint') }}
+                    </p>
+                </div>
+
+                <!-- Icons grid -->
+                <div
+                    class="flex flex-wrap items-stretch fontawesome-icon-grid"
+                    v-else-if="!isLoading && displayedIcons.length > 0"
+                >
+                    <button
+                        type="button"
+                        v-for="(icon, index) in displayedIcons"
+                        :key="icon._uniqueId || icon.id || index"
+                        class="icon-box cursor-pointer"
+                        @click.prevent.stop="saveIcon(icon)"
+                    >
+                        <div class="icon-svg-container">
+                            <i :class="getIconClass(icon)"></i>
+                        </div>
+                        <span class="icon-name">{{ icon.id }}</span>
+                        <span class="icon-meta">
+                            {{ getIconFamilyStyle(icon).family }} /
+                            {{ getIconFamilyStyle(icon).style }}
+                        </span>
+                    </button>
+
+                    <!-- Loading more indicator -->
+                    <div
+                        v-if="isLoadingMore"
+                        class="w-full py-4 text-center"
+                    >
+                        <span class="text-gray-500 dark:text-gray-400">
+                            {{ __('novaFontawesome.loadingMore') }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- No results after search -->
+                <div
+                    v-else-if="hasSearched && !isLoading && displayedIcons.length === 0"
+                    class="py-12 text-center"
+                >
+                    <div class="text-gray-400 dark:text-gray-500 mb-4">
+                        <i class="fa-solid fa-face-frown text-4xl"></i>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        {{ __('novaFontawesome.noResults') }}
+                    </p>
+                </div>
+
+                <!-- Search query too short -->
+                <div
+                    v-else-if="
+                        filter.search.length > 0 &&
+                        filter.search.length < minSearchLength
+                    "
+                    class="py-12 text-center"
+                >
+                    <p class="text-gray-600 dark:text-gray-400">
+                        {{ __('novaFontawesome.searchMinLength', { length: minSearchLength }) }}
+                    </p>
+                </div>
+            </div>
+        </ModalContent>
+
+        <ModalFooter>
+            <div class="ml-auto flex gap-3">
+                <Button type="button" variant="ghost" @click="handleClose">
+                    {{ __('novaFontawesome.cancel') }}
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="solid"
+                    :disabled="isLoading || !value"
                     :loading="isLoading"
                     @click="handleConfirm"
                 >
-                    {{ __("novaFontawesome.save") }}
-                </LoadingButton>
+                    {{ __('novaFontawesome.save') }}
+                </Button>
             </div>
         </ModalFooter>
     </Modal>
 </template>
 
 <script>
-    import { FormField, HandlesValidationErrors } from "laravel-nova";
+import { FormField, HandlesValidationErrors } from 'laravel-nova';
+import { Button } from 'laravel-nova-ui';
+import debounce from 'lodash/debounce';
+import { fuzzySearchIcons } from '../utils/fuzzySearch.js';
 
-    import { library } from "@fortawesome/fontawesome-svg-core";
-    import { fab } from "@fortawesome/free-brands-svg-icons";
-    import { far } from "@fortawesome/free-regular-svg-icons";
-    import { fas } from "@fortawesome/free-solid-svg-icons";
-    import { far as far_pro } from "@fortawesome/pro-regular-svg-icons";
-    import { fas as fas_pro } from "@fortawesome/pro-solid-svg-icons";
-
-    import { fad } from "@fortawesome/pro-duotone-svg-icons";
-    import { fal } from "@fortawesome/pro-light-svg-icons";
-    import { fat } from "@fortawesome/pro-thin-svg-icons";
-
-    export default {
-        name: "GeneralModal",
-        mixins: [FormField, HandlesValidationErrors],
-
-        props: ["field"],
-        data: () => ({
-            isLoading: false,
-            modalOpen: false,
-            library: {},
-            icons: [],
-            iconsChunked: [],
-            expanded: false,
-            chunk: 0,
-            value: "",
-            definitions: [],
-            defaultIconObj: {},
-            iconTypes: {},
-            iconContainer: null,
-            filter: {
-                type: "",
-                search: "",
-            },
-            old_filter: {
-                type: "",
-                search: "",
-            },
-        }),
-        async beforeMount() {
-            this.isLoading = true;
-            await this.loadIcons();
+export default {
+    name: 'GeneralModal',
+    mixins: [FormField, HandlesValidationErrors],
+    components: {
+        Button,
+    },
+    props: {
+        field: {
+            type: Object,
+            required: true,
         },
-        mounted() {
-            this.filter.type = "all";
-            this.old_filter.type = "all";
-
-            if (this.icons.length > 0) {
-                this.icons.sort((a, b) =>
-                    a.iconName > b.iconName
-                        ? 1
-                        : b.iconName > a.iconName
-                        ? -1
-                        : 0
-                );
-            }
-
-            // Set default icon object
-            if (this.defaultIcon && this.defaultIconType) {
-                let i = this.icons.filter(
-                    (icon) =>
-                        icon.prefix === this.defaultIconType &&
-                        icon.iconName === this.defaultIcon
-                );
-
-                if (i[0]) {
-                    this.defaultIconObj = i[0];
-                }
-            }
+        show: {
+            type: Boolean,
+            default: false,
         },
-
-        methods: {
-            async loadIcons() {
-                let arr = {};
-                this.isLoading = true;
-
-                library.add(fab);
-
-                if (this.pro) {
-                    library.add(fas_pro, far_pro, fad, fal, fat);
-                } else {
-                    library.add(fas, far);
-                }
-
-                arr = library.definitions;
-
-                this.icon_types = arr;
-                let icons = [];
-                for (let key in arr) {
-                    this.definitions.push(this.definitionToString(key));
-                    for (let i in arr[key]) {
-                        let iconName = i;
-                        let iconData = arr[key][i];
-                        let icon = {
-                            prefix: key,
-                            iconName: iconName,
-                            iconData: iconData,
-                        };
-
-                        if (this.canShowIcon(icon)) {
-                            icon.show = true;
-                            icons.push(icon);
-                        }
-                    }
-                }
-                this.isLoading = false;
-                this.icons = icons;
-
-                return this.icons;
-            },
-            async getIcons() {
-                this.isLoading = true;
-
-                this.chunk = 0;
-                this.iconsChunked = [];
-
-                let icons = [];
-                let all_types = this.icon_types;
-
-                for (let key in all_types) {
-                    let show = this.displayFilter(key);
-                    if (show) {
-                        for (let i in all_types[key]) {
-                            let iconName = i;
-                            let iconData = all_types[key][i];
-                            let icon = {
-                                prefix: key,
-                                iconName: iconName,
-                                iconData: iconData,
-                            };
-
-                            let show = this.displayIcon(icon);
-                            if (show) {
-                                icons.push(icon);
-                            }
-                        }
-                    }
-                }
-
-                this.$nextTick(function () {
-                    this.icons = icons;
-                    this.isLoading = false;
-                    this.getChunk();
-                });
-
-                this.iconContainer = document.querySelector("#iconContainer");
-            },
-
-            onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
-                if (
-                    scrollTop + clientHeight >= scrollHeight - 250 &&
-                    this.expanded === false
-                ) {
-                    this.expanded = true;
-                    this.getChunk();
-                }
-            },
-            getChunk() {
-                let chunkSize = 100;
-
-                let sortedIcons = this.icons.sort((a, b) => {
-                    let fa = a.iconName.toLowerCase(),
-                        fb = b.iconName.toLowerCase();
-                    if (fa < fb) {
-                        return -1;
-                    }
-                    if (fa > fb) {
-                        return 1;
-                    }
-                    return 0;
-                });
-
-                let nextChunk = this.icons.slice(
-                    this.chunk,
-                    this.chunk + chunkSize
-                );
-                this.iconsChunked = [...this.iconsChunked, ...nextChunk];
-
-                this.expanded = false;
-                this.chunk += chunkSize;
-            },
-            displayIcon(icon) {
-                if (this.filter.search === "") {
-                    return true;
-                }
-                let keyword = this.filter.search.toUpperCase();
-                let alt = keyword.replace("-", " ");
-                let name = icon.iconName.toUpperCase();
-                let nameAlt = name.replace("-", " ");
-
-                return (
-                    name.includes(keyword) ||
-                    name.indexOf(keyword) !== -1 ||
-                    nameAlt.includes(alt) ||
-                    nameAlt.indexOf(alt) !== -1
-                );
-            },
-            displayFilter(typeset) {
-                return (
-                    this.filter.type == "" ||
-                    this.filter.type == "all" ||
-                    this.filter.type == typeset
-                );
-            },
-            canShowIcon(icon) {
-                if (typeof this.field.only !== "undefined") {
-                    if (this.field.only.indexOf(icon.iconName) === -1) {
-                        return false;
-                    }
-                }
-
-                return !icon.iconName ||
-                    !icon.prefix ||
-                    icon.iconName === "font-awesome-logo-full"
-                    ? false
-                    : true;
-            },
-
-            clear() {
-                if (
-                    this.enforceDefaultIcon &&
-                    this.defaultIcon &&
-                    this.defaultIconType &&
-                    this.defaultIconObj.iconName
-                ) {
-                    this.value = this.defaultIconOutput;
-                    this.saveIcon(this.defaultIconObj);
-                } else {
-                    this.value = "";
-                }
-
-                this.clearFilter();
-            },
-
-            clearFilter() {
-                this.chunk = 0;
-                this.iconsChunked = [];
-                this.iconContainer.scrollTop = 0;
-                this.filter.type = "";
-                this.filter.search = "";
-            },
-
-            closeModal() {
-                this.modalOpen = false;
-                this.clearFilter();
-                this.handleClose();
-            },
-
-            toggleModal() {
-                this.modalOpen = !this.modalOpen;
-                this.clearFilter();
-            },
-
-            saveIcon(icon) {
-                let fa6_prefixes = {
-                    fas: "fa-solid",
-                    far: "fa-regular",
-                    fal: "fa-light",
-                    fat: "fa-thin",
-                    fab: "fa-brands",
-                    fad: "fa-duotone",
+    },
+    data: () => ({
+        isLoading: false,
+        isLoadingMore: false,
+        icons: [],
+        displayedIcons: [],
+        value: '',
+        selectedSvg: null,
+        filter: {
+            family: 'all',
+            style: 'all',
+            search: '',
+        },
+        availableFamilies: [],
+        availableStyles: [],
+        debouncedSearch: null,
+        hasSearched: false,
+        apiError: false,
+        apiErrorMessage: '',
+        // Pagination
+        cursor: null,
+        hasMore: false,
+        total: 0,
+        // Filter counts
+        filterCounts: {
+            families: {},
+            styles: {},
+        },
+    }),
+    computed: {
+        pro() {
+            return this.field.pro || false;
+        },
+        minSearchLength() {
+            return this.field.minSearchLength || 2;
+        },
+        fuzzySearchEnabled() {
+            return this.field.fuzzySearch !== false;
+        },
+        fuzzySearchThreshold() {
+            return this.field.fuzzySearchThreshold || 0.3;
+        },
+        isFiltered() {
+            return (this.filter.family && this.filter.family !== 'all') ||
+                   (this.filter.style && this.filter.style !== 'all');
+        },
+        familyOptions() {
+            const totalCount = Object.values(this.filterCounts.families).reduce((a, b) => a + b, 0);
+            const placeholder = {
+                value: 'all',
+                label: totalCount > 0
+                    ? `${this.__('novaFontawesome.selectFamily.placeholder')} (${totalCount})`
+                    : this.__('novaFontawesome.selectFamily.placeholder'),
+            };
+            return [
+                placeholder,
+                ...this.availableFamilies.map((f) => {
+                    const count = this.filterCounts.families[f.id] || 0;
+                    return {
+                        value: f.id,
+                        label: count > 0 ? `${f.label} (${count})` : f.label,
+                    };
+                }),
+            ];
+        },
+        styleOptions() {
+            const totalCount = Object.values(this.filterCounts.styles).reduce((a, b) => a + b, 0);
+            const placeholder = {
+                value: 'all',
+                label: totalCount > 0
+                    ? `${this.__('novaFontawesome.selectStyle.placeholder')} (${totalCount})`
+                    : this.__('novaFontawesome.selectStyle.placeholder'),
+            };
+            return [
+                placeholder,
+                ...this.availableStyles.map((s) => {
+                    const count = this.filterCounts.styles[s.id] || 0;
+                    return {
+                        value: s.id,
+                        label: count > 0 ? `${s.label} (${count})` : s.label,
+                    };
+                }),
+            ];
+        },
+    },
+    created() {
+        this.debouncedSearch = debounce(this.searchIcons, 500);
+    },
+    async mounted() {
+        // Load metadata on mount
+        await this.loadMetadata();
+        // Focus search input
+        this.$nextTick(() => {
+            this.$refs.searchInput?.focus();
+        });
+    },
+    methods: {
+        async loadMetadata() {
+            try {
+                const params = {
+                    version: this.field.version || '6.x',
+                    freeOnly: this.field.freeOnly !== false,
                 };
-                let old_prefix = icon.prefix;
-                let fa6_prefix = fa6_prefixes[old_prefix];
 
-                this.value = fa6_prefix + " fa-" + icon.iconName;
+                const { data } = await Nova.request().get(
+                    '/nova-vendor/nova-fontawesome/metadata',
+                    { params }
+                );
 
-                this.clearFilter();
-                this.handleConfirm();
-            },
+                if (data.metadata) {
+                    this.availableFamilies = data.metadata.families || [];
+                    this.availableStyles = data.metadata.styles || [];
+                }
+            } catch (error) {
+                console.error('Error loading metadata:', error);
+            }
+        },
 
-            handleClose() {
-                this.$emit("close");
-            },
-            handleConfirm() {
-                this.$emit("confirm", this.value);
-            },
+        async searchIcons() {
+            if (this.filter.search.length < this.minSearchLength) {
+                this.icons = [];
+                this.displayedIcons = [];
+                this.cursor = null;
+                this.hasMore = false;
+                this.total = 0;
+                this.hasSearched = false;
+                this.apiError = false;
+                this.filterCounts = { families: {}, styles: {} };
+                return;
+            }
 
-            /*
-             * Convert the class to string
-             */
-            definitionToString(def) {
-                switch (def) {
-                    case "far":
-                    case "fa-regular":
-                        return this.__("novaFontawesome.types.regular");
-                        break;
-                    case "fas":
-                    case "fa-solid":
-                        return this.__("novaFontawesome.types.solid");
-                        break;
-                    case "fab":
-                    case "fa-brands":
-                        return this.__("novaFontawesome.types.brands");
-                        break;
-                    case "fal":
-                    case "fa-light":
-                        return this.__("novaFontawesome.types.light");
-                        break;
-                    case "fad":
-                    case "fa-duotone":
-                        return this.__("novaFontawesome.types.duotone");
-                        break;
-                    case "fat":
-                    case "fa-thin":
-                        return this.__("novaFontawesome.types.thin");
-                        break;
+            this.isLoading = true;
+            this.hasSearched = true;
+            this.cursor = null;
+            this.apiError = false;
+            this.apiErrorMessage = '';
+
+            try {
+                const params = {
+                    query: this.filter.search,
+                    version: this.field.version || '6.x',
+                    first: this.field.maxResults || 100,
+                    freeOnly: this.field.freeOnly !== false,
+                };
+
+                const { data } = await Nova.request().get(
+                    '/nova-vendor/nova-fontawesome/search',
+                    { params }
+                );
+
+                // Check for API error
+                if (data.error) {
+                    this.apiError = true;
+                    this.apiErrorMessage = data.message || this.__('novaFontawesome.apiUnavailable');
+                    this.icons = [];
+                    this.displayedIcons = [];
+                    return;
+                }
+
+                // Store all icons
+                this.icons = data.icons || [];
+                this.cursor = data.cursor;
+                this.hasMore = data.hasMore || false;
+                this.total = data.total || this.icons.length;
+
+                // Calculate filter counts
+                this.calculateFilterCounts(this.icons);
+
+                // Apply local filters
+                this.applyFilters();
+            } catch (error) {
+                console.error('Error searching icons:', error);
+                // Try fuzzy fallback
+                this.useFuzzyFallback();
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async loadMoreIcons() {
+            if (!this.hasMore || this.isLoadingMore || !this.cursor) {
+                return;
+            }
+
+            this.isLoadingMore = true;
+
+            try {
+                const params = {
+                    query: this.filter.search,
+                    version: this.field.version || '6.x',
+                    first: this.field.maxResults || 100,
+                    freeOnly: this.field.freeOnly !== false,
+                    cursor: this.cursor,
+                };
+
+                const { data } = await Nova.request().get(
+                    '/nova-vendor/nova-fontawesome/search',
+                    { params }
+                );
+
+                if (data.error) {
+                    return;
+                }
+
+                // Append new icons
+                const newIcons = data.icons || [];
+                this.icons = [...this.icons, ...newIcons];
+                this.cursor = data.cursor;
+                this.hasMore = data.hasMore || false;
+                this.total = data.total || this.icons.length;
+
+                // Recalculate filter counts
+                this.calculateFilterCounts(this.icons);
+
+                // Re-apply filters
+                this.applyFilters();
+            } catch (error) {
+                console.error('Error loading more icons:', error);
+            } finally {
+                this.isLoadingMore = false;
+            }
+        },
+
+        applyFilters() {
+            let filteredIcons = this.icons;
+
+            if (this.filter.family && this.filter.family !== 'all') {
+                filteredIcons = filteredIcons.filter(icon => {
+                    const iconFamily = icon._selectedStyle?.family || 'classic';
+                    return iconFamily === this.filter.family;
+                });
+            }
+
+            if (this.filter.style && this.filter.style !== 'all') {
+                filteredIcons = filteredIcons.filter(icon => {
+                    const iconStyle = icon._selectedStyle?.style || 'solid';
+                    return iconStyle === this.filter.style;
+                });
+            }
+
+            this.displayedIcons = filteredIcons;
+        },
+
+        calculateFilterCounts(icons) {
+            const familyCounts = {};
+            const styleCounts = {};
+
+            icons.forEach(icon => {
+                const family = icon._selectedStyle?.family || 'classic';
+                const style = icon._selectedStyle?.style || 'solid';
+
+                familyCounts[family] = (familyCounts[family] || 0) + 1;
+                styleCounts[style] = (styleCounts[style] || 0) + 1;
+            });
+
+            this.filterCounts = {
+                families: familyCounts,
+                styles: styleCounts,
+            };
+        },
+
+        useFuzzyFallback() {
+            if (this.fuzzySearchEnabled && this.filter.search.length >= this.minSearchLength) {
+                let fuzzyResults = fuzzySearchIcons(this.filter.search, {
+                    threshold: this.fuzzySearchThreshold,
+                    maxResults: this.field.maxResults || 50,
+                });
+
+                // Apply family/style filters to fuzzy results
+                if (this.filter.family && this.filter.family !== 'all') {
+                    fuzzyResults = fuzzyResults.filter((icon) => {
+                        const styles = this.getAvailableStyles(icon);
+                        return styles.some(
+                            (s) => s.family === this.filter.family
+                        );
+                    });
+                }
+
+                if (this.filter.style && this.filter.style !== 'all') {
+                    fuzzyResults = fuzzyResults.filter((icon) => {
+                        const styles = this.getAvailableStyles(icon);
+                        return styles.some(
+                            (s) => s.style === this.filter.style
+                        );
+                    });
+                }
+
+                this.icons = fuzzyResults;
+                this.displayedIcons = fuzzyResults;
+                this.hasMore = false;
+                this.cursor = null;
+            } else {
+                this.icons = [];
+                this.displayedIcons = [];
+            }
+        },
+
+        onScroll({ target: { scrollTop, clientHeight, scrollHeight } }) {
+            // Load more when near bottom
+            if (
+                scrollTop + clientHeight >= scrollHeight - 250 &&
+                this.hasMore &&
+                !this.isLoadingMore
+            ) {
+                this.loadMoreIcons();
+            }
+        },
+
+        getIconClass(icon) {
+            // Build FA CSS class from icon data
+            const { family, style } = this.getIconFamilyStyle(icon);
+
+            // Handle different families
+            if (family === 'brands') {
+                return `fa-brands fa-${icon.id}`;
+            } else if (family === 'sharp') {
+                return `fa-sharp fa-${style} fa-${icon.id}`;
+            } else if (family === 'sharp-duotone') {
+                return `fa-sharp-duotone fa-${style} fa-${icon.id}`;
+            } else if (family === 'duotone') {
+                return `fa-duotone fa-${style} fa-${icon.id}`;
+            }
+
+            // Classic (default): just the style class
+            return `fa-${style} fa-${icon.id}`;
+        },
+
+        getIconSvg(icon) {
+            if (!icon.svgs || icon.svgs.length === 0) {
+                return null;
+            }
+
+            // Prefer solid, then regular, then first available
+            const preferredOrder = [
+                'solid',
+                'regular',
+                'brands',
+                'light',
+                'thin',
+                'duotone',
+            ];
+
+            for (const preferred of preferredOrder) {
+                const svgData = icon.svgs.find(
+                    (s) => s.familyStyle?.style === preferred
+                );
+                if (svgData && svgData.pathData) {
+                    return this.buildSvgFromPath(svgData);
+                }
+            }
+
+            // Fallback to first available
+            if (icon.svgs[0] && icon.svgs[0].pathData) {
+                const svgData = icon.svgs[0];
+                return this.buildSvgFromPath(svgData);
+            }
+
+            return null;
+        },
+
+        buildSvgFromPath(svgData) {
+            const style = svgData.familyStyle?.style;
+            const pathData = svgData.pathData;
+            const width = svgData.width || 512;
+            const height = svgData.height || 512;
+
+            if (!pathData || pathData.length === 0) {
+                return `<svg viewBox="0 0 ${width} ${height}"></svg>`;
+            }
+
+            // pathData is an array
+            // For monotone: only one path (index 0)
+            // For duotone: two paths - index 0 is secondary, index 1 is primary
+            const isDuotone = style === 'duotone' && pathData.length === 2;
+
+            let paths = '';
+            if (isDuotone) {
+                // Secondary path (lighter)
+                if (pathData[0]) {
+                    paths += `<path d="${pathData[0]}" opacity="0.4"/>`;
+                }
+                // Primary path
+                if (pathData[1]) {
+                    paths += `<path d="${pathData[1]}"/>`;
+                }
+            } else {
+                // Monotone icon - single path
+                if (pathData[0]) {
+                    paths = `<path d="${pathData[0]}"/>`;
+                }
+            }
+
+            return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+        },
+
+        /**
+         * Get all available styles for an icon (both free and pro if freeOnly is false)
+         */
+        getAvailableStyles(icon) {
+            const freeStyles = icon.familyStylesByLicense?.free || [];
+            const proStyles = icon.familyStylesByLicense?.pro || [];
+
+            // If freeOnly is false, include pro styles
+            if (this.field.freeOnly === false) {
+                return [...freeStyles, ...proStyles];
+            }
+
+            return freeStyles;
+        },
+
+        getIconFamilyStyle(icon) {
+            // If the backend has pre-selected a style (expanded results), use it
+            if (icon._selectedStyle) {
+                return {
+                    family: icon._selectedStyle.family || 'classic',
+                    style: icon._selectedStyle.style || 'solid',
+                };
+            }
+
+            const styles = this.getAvailableStyles(icon);
+
+            if (styles.length === 0) {
+                return { family: 'classic', style: 'solid' };
+            }
+
+            // Prefer the currently selected style/family filter if available
+            if (this.filter.style !== 'all' || this.filter.family !== 'all') {
+                const matchingStyle = styles.find(s => {
+                    const styleMatch = this.filter.style === 'all' || s.style === this.filter.style;
+                    const familyMatch = this.filter.family === 'all' || s.family === this.filter.family;
+                    return styleMatch && familyMatch;
+                });
+                if (matchingStyle) {
+                    return {
+                        family: matchingStyle.family || 'classic',
+                        style: matchingStyle.style || 'solid',
+                    };
+                }
+            }
+
+            const firstAvailable = styles[0];
+            return {
+                family: firstAvailable.family || 'classic',
+                style: firstAvailable.style || 'solid',
+            };
+        },
+
+        saveIcon(icon) {
+            const { family, style } = this.getIconFamilyStyle(icon);
+
+            // Build the CSS class string according to FontAwesome structure
+            let classString = '';
+
+            // Handle different families
+            if (family === 'brands') {
+                classString = 'fa-brands';
+            } else if (family === 'sharp') {
+                classString = `fa-sharp fa-${style}`;
+            } else if (family === 'sharp-duotone') {
+                classString = `fa-sharp-duotone fa-${style}`;
+            } else if (family === 'duotone') {
+                classString = `fa-duotone fa-${style}`;
+            } else {
+                classString = `fa-${style}`;
+            }
+
+            const iconValue = `${classString} fa-${icon.id}`;
+            const iconSvg = this.getIconSvg(icon);
+
+            this.$emit('confirm', {
+                value: iconValue,
+                svg: iconSvg,
+            });
+        },
+
+        handleClose() {
+            this.$emit('close');
+        },
+
+        handleConfirm() {
+            // Only used by the Save button in footer
+            this.$emit('confirm', {
+                value: this.value,
+                svg: this.selectedSvg,
+            });
+        },
+    },
+
+    watch: {
+        'filter.family': {
+            handler() {
+                // Re-apply filters when family changes
+                if (this.icons.length > 0) {
+                    this.applyFilters();
                 }
             },
-
-            /*
-             * Convert the string to class method
-             */
-            stringToDefinition(str) {
-                switch (str) {
-                    case this.__("novaFontawesome.types.regular"):
-                        return "far";
-                        break;
-                    case this.__("novaFontawesome.types.solid"):
-                        return "fas";
-                        break;
-                    case this.__("novaFontawesome.types.brands"):
-                        return "fab";
-                        break;
-                    case this.__("novaFontawesome.types.light"):
-                        return "fal";
-                        break;
-                    case this.__("novaFontawesome.types.duotone"):
-                        return "fad";
-                        break;
-                    case this.__("novaFontawesome.types.thin"):
-                        return "fat";
-                        break;
+        },
+        'filter.style': {
+            handler() {
+                // Re-apply filters when style changes
+                if (this.icons.length > 0) {
+                    this.applyFilters();
                 }
             },
-
-            /*
-             * Set the initial, internal value for the field.
-             */
-            setInitialValue() {
-                this.value = this.field.value || this.defaultIconOutput;
-            },
-
-            /**
-             * Fill the given FormData object with the field's internal value.
-             */
-            fill(formData) {
-                formData.append(
-                    this.field.attribute,
-                    this.value || this.defaultIconOutput
-                );
-            },
-
-            /**
-             * Update the field's internal value.
-             */
-            handleChange(value) {
-                this.value = value;
-            },
         },
-        computed: {
-            pro() {
-                return this.field.pro || false;
-            },
-            defaultIcon() {
-                return this.field.default_icon || "";
-            },
-            defaultIconType() {
-                return this.field.default_icon_type || "";
-            },
-            addButtonText() {
-                return (
-                    this.field.add_button_text ||
-                    this.__("novaFontawesome.addIcon")
-                );
-            },
-            enforceDefaultIcon() {
-                return this.field.enforce_default_icon || false;
-            },
-            defaultIconOutput() {
-                return this.defaultIconType + " fa-" + this.defaultIcon;
-            },
-            chunkedIcons() {
-                return this.iconsChunked;
-            },
-        },
-
-        watch: {
-            "filter.search": {
-                handler(val) {
-                    this.filter.search = val;
-                    this.chunk = 0;
-                    this.iconsChunked = [];
-                    this.getIcons();
-                },
-            },
-            "filter.type": {
-                handler(val) {
-                    if (this.old_filter.type !== val) {
-                        this.clearFilter();
-                    }
-                    this.filter.type = val;
-                    this.chunk = 0;
-                    this.iconsChunked = [];
-                    this.old_filter.type = this.filter.type;
-                    this.getIcons();
-                },
-            },
-        },
-    };
+    },
+};
 </script>
 
-<style scoped></style>
+<style>
+/* FontAwesome icon grid styles */
+.fontawesome-icon-grid .icon-box {
+    width: calc(16.666% - 0.5rem);
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgb(var(--colors-gray-200));
+    border-radius: 0.375rem;
+    margin: 0.25rem;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    background: transparent;
+    text-align: center;
+}
+
+.dark .fontawesome-icon-grid .icon-box {
+    border-color: rgb(var(--colors-gray-700));
+}
+
+.fontawesome-icon-grid .icon-box:hover {
+    border-color: rgb(var(--colors-primary-500));
+    color: rgb(var(--colors-primary-500));
+    background-color: rgb(var(--colors-primary-50));
+}
+
+.dark .fontawesome-icon-grid .icon-box:hover {
+    background-color: rgba(var(--colors-primary-900), 0.3);
+}
+
+.fontawesome-icon-grid .icon-svg-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.fontawesome-icon-grid .icon-svg-container svg {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    fill: currentColor;
+}
+
+.fontawesome-icon-grid .icon-svg-container i {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.fontawesome-icon-grid .icon-name {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 0.5rem;
+    background: rgb(var(--colors-gray-100));
+    padding: 0.25em 0.5em;
+    border-radius: 0.25rem;
+    color: rgb(var(--colors-gray-700));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.fontawesome-icon-grid .icon-meta {
+    display: block;
+    font-size: 0.6rem;
+    margin-top: 0.25rem;
+    color: rgb(var(--colors-gray-500));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.dark .fontawesome-icon-grid .icon-name {
+    background: rgb(var(--colors-gray-700));
+    color: rgb(var(--colors-gray-300));
+}
+
+.dark .fontawesome-icon-grid .icon-meta {
+    color: rgb(var(--colors-gray-400));
+}
+
+.fontawesome-icon-grid .skeleton-box {
+    width: 100%;
+    height: 40px;
+    display: block;
+}
+
+.fontawesome-icon-grid .skeleton-text {
+    height: 1.25rem;
+    width: 80%;
+}
+
+@keyframes fontawesome-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.fontawesome-icon-grid .animate-pulse {
+    animation: fontawesome-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (max-width: 1279px) {
+    .fontawesome-icon-grid .icon-box {
+        width: calc(25% - 0.5rem);
+    }
+}
+
+@media (max-width: 900px) {
+    .fontawesome-icon-grid .icon-box {
+        width: calc(50% - 0.5rem);
+    }
+}
+</style>
