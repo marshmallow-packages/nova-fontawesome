@@ -22,7 +22,9 @@
                                 />
                             </svg>
                         </button>
-                        <i :key="iconKey" :class="value" class="icon-preview"></i>
+                        <span class="icon-preview-wrapper" ref="iconWrapper">
+                            <i :class="value" class="icon-preview"></i>
+                        </span>
                     </div>
                     <div class="icon-info">
                         <div class="icon-info-name">
@@ -80,7 +82,6 @@
         data() {
             return {
                 modalOpen: false,
-                iconKey: 0,
             };
         },
         mounted() {
@@ -145,10 +146,16 @@
 
             confirmModal(iconData) {
                 console.log('[FA] confirmModal - before:', this.value);
-                this.value = iconData.value;
-                this.iconKey++; // Force icon element to re-render
-                console.log('[FA] confirmModal - after:', this.value);
+                // Close modal FIRST, before updating value
                 this.modalOpen = false;
+                // Use setTimeout to let modal fully close before updating value
+                setTimeout(() => {
+                    this.value = iconData.value;
+                    console.log('[FA] confirmModal - value set to:', this.value);
+                    this.$nextTick(() => {
+                        this.refreshIcon();
+                    });
+                }, 50);
             },
 
             closeModal() {
@@ -168,7 +175,14 @@
                 } else {
                     this.value = "";
                 }
-                this.iconKey++; // Force icon element to re-render
+            },
+
+            refreshIcon() {
+                // Replace the icon element's innerHTML to force FontAwesome to reprocess
+                const wrapper = this.$refs.iconWrapper;
+                if (wrapper && this.value) {
+                    wrapper.innerHTML = `<i class="${this.value} icon-preview"></i>`;
+                }
             },
 
             /**
