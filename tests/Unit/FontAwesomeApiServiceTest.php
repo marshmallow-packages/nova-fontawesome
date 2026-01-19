@@ -46,10 +46,10 @@ class FontAwesomeApiServiceTest extends TestCase
             '*' => Http::response(null, 500),
         ]);
 
-        $icons = $this->service->search('user');
+        $result = $this->service->search('user');
 
-        $this->assertNotEmpty($icons);
-        $this->assertArrayHasKey('id', $icons[0]);
+        $this->assertNotEmpty($result['icons']);
+        $this->assertArrayHasKey('id', $result['icons'][0]);
     }
 
     /** @test */
@@ -187,10 +187,10 @@ class FontAwesomeApiServiceTest extends TestCase
             '*' => Http::response($mockResponse, 200),
         ]);
 
-        $icons = $this->service->search('user');
+        $result = $this->service->search('user');
 
-        $this->assertNotEmpty($icons);
-        $this->assertEquals('user', $icons[0]['id']);
+        $this->assertNotEmpty($result['icons']);
+        $this->assertEquals('user', $result['icons'][0]['id']);
     }
 
     /** @test */
@@ -230,9 +230,9 @@ class FontAwesomeApiServiceTest extends TestCase
         ]);
 
         $this->service->configure(['freeOnly' => true]);
-        $icons = $this->service->search('user');
+        $result = $this->service->search('user');
 
-        $this->assertCount(1, $icons);
-        $this->assertEquals('user', $icons[0]['id']);
+        $this->assertCount(1, $result['icons']);
+        $this->assertEquals('user', $result['icons'][0]['id']);
     }
 }

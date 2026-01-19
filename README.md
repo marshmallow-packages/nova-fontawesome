@@ -37,25 +37,56 @@ A Laravel Nova field for selecting Font Awesome icons using the Font Awesome Gra
 
 ## Installation
 
-Install via Composer:
+### Step 1: Install via Composer
 
 ```bash
 composer require marshmallow/nova-fontawesome
 ```
 
-Publish the config file (optional):
+### Step 2: Set up Font Awesome CSS
+
+The package needs Font Awesome CSS to render icons. Choose one of these options:
+
+**Option A: Self-hosted (Recommended for Pro users)**
+
+1. Download Font Awesome from [fontawesome.com](https://fontawesome.com/download)
+2. Extract and copy the `css` and `webfonts` folders to `public/vendor/fontawesome/`
+3. Add to your `.env`:
+   ```env
+   FONTAWESOME_CSS_STRATEGY=self-hosted
+   FONTAWESOME_CSS_PATH=/vendor/fontawesome/css/all.min.css
+   ```
+
+**Option B: Font Awesome Kit (Easiest for Pro)**
+
+1. Get your Kit ID from [fontawesome.com/kits](https://fontawesome.com/kits)
+2. Add to your `.env`:
+   ```env
+   FONTAWESOME_CSS_STRATEGY=kit
+   FONTAWESOME_KIT_ID=abc123def
+   ```
+
+**Option C: CDN (Free icons only)**
+
+No setup needed - this is the fallback if no other strategy is configured:
+```env
+FONTAWESOME_CSS_STRATEGY=cdn
+FONTAWESOME_CDN_VERSION=6.5.1
+```
+
+### Step 3: Publish config (optional)
 
 ```bash
 php artisan vendor:publish --tag=nova-fontawesome-config
 ```
 
-Build the assets:
+### Step 4: Clear cache
 
 ```bash
-npm install && npm run build
+php artisan cache:clear
 ```
 
-That's it! The package uses the Font Awesome GraphQL API, so you don't need to manually download or include Font Awesome files.
+That's it! The package uses the Font Awesome GraphQL API, so you don't need to manually download icon data.
 
 ## CSS Loading Strategy
 

@@ -80,7 +80,7 @@ class FontAwesomeController extends Controller
             ]);
         }
 
-        $icons = $result['icons'] ?? [];
+        $icons = $result['icons'];
 
         // Get configured families and styles
         $configFamilies = config('nova-fontawesome.families', []);
@@ -133,9 +133,9 @@ class FontAwesomeController extends Controller
 
         return response()->json([
             'icons' => $icons,
-            'hasMore' => $result['hasMore'] ?? false,
-            'cursor' => $result['cursor'] ?? null,
-            'total' => $result['total'] ?? count($icons),
+            'hasMore' => $result['hasMore'],
+            'cursor' => $result['cursor'],
+            'total' => $result['total'],
             'fallback' => $result['fallback'] ?? false,
         ]);
     }

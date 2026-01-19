@@ -143,23 +143,19 @@ Improved error handling with user-friendly messages when Font Awesome API is una
    composer require marshmallow/nova-fontawesome:^2.0
    ```
 
-5. **Update npm dependencies** (delete node_modules and package-lock.json first):
+5. **(Package maintainers only)** If you're developing the package locally, update npm dependencies:
    ```bash
-   rm -rf node_modules package-lock.json
-   npm install
+   rm -rf node_modules package-lock.json bun.lock yarn.lock
+   npm install && npm run build
    ```
+   > **Note:** Regular users don't need to rebuild assets - they're pre-compiled in the package.
 
-6. **Rebuild assets with Vite**:
-   ```bash
-   npm run build
-   ```
-
-7. **Update config file** (if published):
+6. **Update config file** (if published):
    ```bash
    php artisan vendor:publish --tag=nova-fontawesome-config --force
    ```
 
-8. **Update environment variables** (if using Kit or Pro):
+7. **Update environment variables** (if using Kit or Pro):
    ```env
    # Old format (still works but deprecated)
    FONTAWESOME_KIT_ID=abc123
@@ -169,7 +165,7 @@ Improved error handling with user-friendly messages when Font Awesome API is una
    FONTAWESOME_KIT_ID=abc123
    ```
 
-9. **Clear caches**:
+8. **Clear caches**:
    ```bash
    php artisan cache:clear
    php artisan config:clear

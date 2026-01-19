@@ -200,7 +200,7 @@ class FontAwesomeApiService
      * @param string|null $style  Filter by style
      * @param string|null $cursor Pagination cursor for next page
      *
-     * @return array{icons: array, hasMore: bool, cursor: string|null, total: int, error?: bool, message?: string}
+     * @return array{icons: array, hasMore: bool, cursor: string|null, total: int, error?: bool, message?: string, fallback?: bool}
      */
     public function search(string $query, ?string $family = null, ?string $style = null, ?string $cursor = null): array
     {
@@ -497,13 +497,14 @@ class FontAwesomeApiService
             if (!$icon) {
                 // Fallback to search
                 $results = $this->search($name, $family, $style);
-                foreach ($results as $result) {
+                $icons = $results['icons'] ?? [];
+                foreach ($icons as $result) {
                     if ($result['id'] === $name) {
                         $icon = $result;
                         break;
                     }
                 }
-                $icon ??= ($results[0] ?? null);
+                $icon ??= ($icons[0] ?? null);
             }
 
             if ($icon && $this->cacheEnabled) {
@@ -884,12 +885,14 @@ class FontAwesomeApiService
         try {
             $results = $this->search('user');
             $duration = round((microtime(true) - $start) * 1000, 2);
+            $icons = $results['icons'];
+            $iconCount = count($icons);
 
             return [
-                'success' => count($results) > 0,
-                'message' => count($results) > 0 ? 'Search returned ' . count($results) . ' results' : 'Search returned no results',
+                'success' => $iconCount > 0,
+                'message' => $iconCount > 0 ? 'Search returned ' . $iconCount . ' results' : 'Search returned no results',
                 'duration_ms' => $duration,
-                'result_count' => count($results),
+                'result_count' => $iconCount,
             ];
         } catch (Exception $e) {
             return [
