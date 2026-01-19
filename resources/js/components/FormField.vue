@@ -22,7 +22,7 @@
                                 />
                             </svg>
                         </button>
-                        <i :key="value" :class="value" class="icon-preview"></i>
+                        <i :key="iconKey" :class="value" class="icon-preview"></i>
                     </div>
                     <div class="icon-info">
                         <div class="icon-info-name">
@@ -80,19 +80,13 @@
         data() {
             return {
                 modalOpen: false,
-                pendingValue: null,
+                iconKey: 0,
             };
         },
-        watch: {
-            modalOpen(newVal) {
-                // When modal closes and we have a pending value, apply it after modal transition completes
-                if (!newVal && this.pendingValue !== null) {
-                    // Nova's modal has a leave transition (~150-200ms), wait for it to complete
-                    setTimeout(() => {
-                        this.applyPendingValue();
-                    }, 300);
-                }
-            },
+        mounted() {
+            // Ensure our fill method is used (reassign after mixin's mounted)
+            console.log('[FA] mounted - reassigning fill');
+            this.field.fill = this.fill;
         },
         computed: {
             defaultIcon() {
@@ -150,20 +144,15 @@
             },
 
             confirmModal(iconData) {
-                // Store the pending value, will be applied after modal closes
-                this.pendingValue = iconData.value;
+                console.log('[FA] confirmModal - before:', this.value);
+                this.value = iconData.value;
+                this.iconKey++; // Force icon element to re-render
+                console.log('[FA] confirmModal - after:', this.value);
                 this.modalOpen = false;
             },
 
             closeModal() {
                 this.modalOpen = false;
-            },
-
-            applyPendingValue() {
-                if (this.pendingValue !== null) {
-                    this.value = this.pendingValue;
-                    this.pendingValue = null;
-                }
             },
 
             /*
@@ -179,6 +168,7 @@
                 } else {
                     this.value = "";
                 }
+                this.iconKey++; // Force icon element to re-render
             },
 
             /**
@@ -186,7 +176,8 @@
              */
             fill(formData) {
                 const valueToSave = this.value || this.defaultIconOutput;
-                formData.append(this.field.attribute, valueToSave);
+                console.log('[FA] fill() - attribute:', this.field.attribute, 'value:', valueToSave, 'this.value:', this.value);
+                this.fillIfVisible(formData, this.field.attribute, valueToSave);
             },
 
             /**

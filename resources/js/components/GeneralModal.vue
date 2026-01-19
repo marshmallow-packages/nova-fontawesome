@@ -4,7 +4,7 @@
         class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden fontawesome-modal"
         size="4xl"
         role="dialog"
-        @close="handleClose"
+        @close-via-escape="handleClose"
     >
         <ModalHeader v-text="__('novaFontawesome.modalTitle')" />
 
@@ -121,7 +121,7 @@
                         v-for="(icon, index) in displayedIcons"
                         :key="icon._uniqueId || icon.id || index"
                         class="icon-box cursor-pointer"
-                        @click.prevent="saveIcon(icon)"
+                        @click.prevent.stop="saveIcon(icon)"
                     >
                         <div class="icon-svg-container">
                             <i :class="getIconClass(icon)"></i>
@@ -659,33 +659,24 @@ export default {
 
             // Handle different families
             if (family === 'brands') {
-                // Brands: fa-brands (both family and style)
                 classString = 'fa-brands';
             } else if (family === 'sharp') {
-                // Sharp: fa-sharp + style class
                 classString = `fa-sharp fa-${style}`;
             } else if (family === 'sharp-duotone') {
-                // Sharp Duotone: fa-sharp-duotone + style class
                 classString = `fa-sharp-duotone fa-${style}`;
             } else if (family === 'duotone') {
-                // Duotone: fa-duotone + style class
                 classString = `fa-duotone fa-${style}`;
             } else {
-                // Classic (default): just the style class
                 classString = `fa-${style}`;
             }
 
             const iconValue = `${classString} fa-${icon.id}`;
             const iconSvg = this.getIconSvg(icon);
 
-            // Defer emit to next tick to avoid DOM mutation conflicts
-            // Vue's teleport unmounting can conflict with parent re-renders
-            setTimeout(() => {
-                this.$emit('confirm', {
-                    value: iconValue,
-                    svg: iconSvg,
-                });
-            }, 0);
+            this.$emit('confirm', {
+                value: iconValue,
+                svg: iconSvg,
+            });
         },
 
         handleClose() {
