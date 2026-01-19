@@ -4,31 +4,23 @@
             <div>
                 <div
                     v-if="value"
-                    class="display-icon-wrapper mb-4 flex items-center gap-4"
+                    class="fontawesome-form-field-display mb-4 flex items-center gap-4"
                 >
                     <div
-                        class="display-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray"
+                        class="display-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray group"
                         style="width: 4rem; height: 4rem"
                     >
                         <button
                             type="button"
-                            class="close-icon z-20 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-red-400 hover:text-white p-0.5 rounded-full shadow-sm transition-all cursor-pointer"
-                            style="
-                                width: 18px;
-                                height: 18px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                            "
+                            class="close-icon z-20 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-red-400 hover:text-white rounded-full shadow-sm transition-all cursor-pointer"
                             @click="clear"
                             title="Clear icon"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                width="10"
-                                height="10"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
+                                style="width: 100%; height: 100%;"
                             >
                                 <path
                                     fill-rule="evenodd"
@@ -37,7 +29,7 @@
                                 />
                             </svg>
                         </button>
-                        <i :class="value" style="font-size: 2rem"></i>
+                        <i :key="value" :class="value" style="font-size: 2rem; pointer-events: none;"></i>
                     </div>
                     <div class="icon-info text-sm">
                         <div
@@ -71,8 +63,8 @@
                 />
 
                 <GeneralModal
-                    class="fontawesome-modal max-w-4xl"
                     v-if="modalOpen"
+                    class="fontawesome-modal max-w-4xl"
                     :field="field"
                     @confirm="confirmModal"
                     @close="closeModal"
@@ -153,8 +145,16 @@
             },
 
             confirmModal(iconData) {
-                this.value = iconData.value;
+                // Store the value
+                const newValue = iconData.value;
+                // Close modal first
                 this.modalOpen = false;
+                // Update value in next tick after modal is removed from DOM
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.value = newValue;
+                    }, 0);
+                });
             },
 
             closeModal() {
@@ -208,7 +208,7 @@
         max-height: 100%;
     }
 
-    .display-icon svg {
+    .display-icon > i svg {
         width: 2rem;
         height: 2rem;
     }
@@ -233,23 +233,30 @@
         fill: currentColor;
     }
 
-    .display-icon:hover .close-icon {
-        display: block;
+    .fontawesome-form-field-display .display-icon {
+        overflow: visible;
     }
 
-    .close-icon {
-        display: none;
+    .fontawesome-form-field-display .display-icon .close-icon {
         position: absolute;
         top: 0;
         right: 0;
-
-        opacity: 0.75;
+        width: 18px;
+        height: 18px;
+        padding: 4px;
+        opacity: 0;
+        visibility: hidden;
         cursor: pointer;
-        transition: all 0.2s ease-in-out;
+        transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
         transform: translate(50%, -50%);
     }
 
-    .close-icon:hover {
+    .fontawesome-form-field-display .display-icon:hover .close-icon {
+        opacity: 0.85;
+        visibility: visible;
+    }
+
+    .fontawesome-form-field-display .display-icon .close-icon:hover {
         opacity: 1;
     }
 

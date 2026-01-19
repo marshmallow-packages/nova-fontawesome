@@ -60,7 +60,7 @@
                 ref="iconContainer"
             >
                 <!-- Loading state -->
-                <div v-if="isLoading && displayedIcons.length === 0">
+                <div v-if="isLoading">
                     <div class="flex flex-wrap items-stretch fontawesome-icon-grid">
                         <div
                             v-for="n in 24"
@@ -69,10 +69,12 @@
                         >
                             <div
                                 class="skeleton-box animate-pulse bg-gray-200 dark:bg-gray-700 rounded"
+                                style="width: 100%; height: 40px;"
                             ></div>
                             <span
                                 class="skeleton-text animate-pulse bg-gray-200 dark:bg-gray-700 rounded mt-2"
-                            >&nbsp;</span>
+                                style="width: 80%; height: 1rem; display: block;"
+                            ></span>
                         </div>
                     </div>
                 </div>
@@ -112,13 +114,14 @@
                 <!-- Icons grid -->
                 <div
                     class="flex flex-wrap items-stretch fontawesome-icon-grid"
-                    v-else-if="displayedIcons.length > 0"
+                    v-else-if="!isLoading && displayedIcons.length > 0"
                 >
-                    <div
+                    <button
+                        type="button"
                         v-for="(icon, index) in displayedIcons"
                         :key="icon._uniqueId || icon.id || index"
                         class="icon-box cursor-pointer"
-                        @click="saveIcon(icon)"
+                        @click.prevent="saveIcon(icon)"
                     >
                         <div class="icon-svg-container">
                             <i :class="getIconClass(icon)"></i>
@@ -128,7 +131,7 @@
                             {{ getIconFamilyStyle(icon).family }} /
                             {{ getIconFamilyStyle(icon).style }}
                         </span>
-                    </div>
+                    </button>
 
                     <!-- Loading more indicator -->
                     <div
@@ -672,10 +675,14 @@ export default {
                 classString = `fa-${style}`;
             }
 
-            this.value = `${classString} fa-${icon.id}`;
-            this.selectedSvg = this.getIconSvg(icon);
+            const iconValue = `${classString} fa-${icon.id}`;
+            const iconSvg = this.getIconSvg(icon);
 
-            this.handleConfirm();
+            // Emit confirm with data, parent will handle closing
+            this.$emit('confirm', {
+                value: iconValue,
+                svg: iconSvg,
+            });
         },
 
         handleClose() {
@@ -683,6 +690,7 @@ export default {
         },
 
         handleConfirm() {
+            // Only used by the Save button in footer
             this.$emit('confirm', {
                 value: this.value,
                 svg: this.selectedSvg,
@@ -725,6 +733,8 @@ export default {
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
+    background: transparent;
+    text-align: center;
 }
 
 .dark .fontawesome-icon-grid .icon-box {
@@ -746,9 +756,8 @@ export default {
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 40px;
-    max-width: 100%;
-    overflow: hidden;
+    height: 32px;
+    flex-shrink: 0;
 }
 
 .fontawesome-icon-grid .icon-svg-container svg {
@@ -760,9 +769,8 @@ export default {
 }
 
 .fontawesome-icon-grid .icon-svg-container i {
-    font-size: 1.75rem;
-    max-width: 100%;
-    text-align: center;
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
 .fontawesome-icon-grid .icon-name {
