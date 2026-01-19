@@ -8,10 +8,10 @@ return [
     |
     | The default Font Awesome version to use when searching icons.
     | Supports both 6.x and 7.x versions.
-    | Use semantic versions like "6.x" or specific versions like "6.5.1".
+    | Use semantic versions like "7.x" or specific versions like "7.0.1".
     |
     */
-    'version' => env('FONTAWESOME_VERSION', '6.x'),
+    'version' => env('FONTAWESOME_VERSION', '7.0.1'),
 
     /*
     |--------------------------------------------------------------------------
@@ -42,11 +42,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | The icon styles to show by default.
-    | Options: solid, regular, light, thin, duotone, brands
-    | Note: light, thin, and duotone require Font Awesome Pro.
+    | Free options: solid, regular, brands
+    | Pro options: light, thin, duotone (require Font Awesome Pro)
     |
     */
-    'styles' => ['solid', 'regular', 'light', 'thin', 'duotone', 'brands'],
+    'styles' => ['solid', 'regular', 'brands'],
 
     /*
     |--------------------------------------------------------------------------
@@ -54,11 +54,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | The icon families available for selection.
-    | Options: classic, brands, duotone, sharp, sharp-duotone
-    | Note: duotone, sharp, and sharp-duotone require Font Awesome Pro.
+    | Free options: classic, brands
+    | Pro options: duotone, sharp, sharp-duotone (require Font Awesome Pro)
     |
     */
-    'families' => ['classic', 'sharp', 'duotone', 'sharp-duotone', 'brands'],
+    'families' => ['classic', 'brands'],
 
     /*
     |--------------------------------------------------------------------------
@@ -110,12 +110,23 @@ return [
         // Default: /vendor/fontawesome/css/all.min.css
         'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
 
+        // Base path for individual CSS files (relative to public folder)
+        // Used by @fontawesome Blade directive for loading individual styles
+        'base_path' => env('FONTAWESOME_CSS_BASE_PATH', 'vendor/fontawesome/css'),
+
+        // Path for webfonts (relative to public folder)
+        'webfonts_path' => env('FONTAWESOME_WEBFONTS_PATH', 'vendor/fontawesome/webfonts'),
+
+        // Vite path for CSS files (relative to resources folder)
+        // Used when loading FontAwesome via Vite instead of public folder
+        'vite_path' => env('FONTAWESOME_VITE_PATH', 'resources/css/fontawesome'),
+
         // Font Awesome Kit ID (only used if strategy = 'kit')
         // Get your Kit ID from https://fontawesome.com/kits
         'kit_id' => env('FONTAWESOME_KIT_ID'),
 
         // CDN version to use when strategy = 'cdn'
-        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
+        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '7.0.1'),
     ],
 
     /*
