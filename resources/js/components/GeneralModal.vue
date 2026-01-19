@@ -1,6 +1,6 @@
 <template>
     <Modal
-        :show="true"
+        :show="show"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden fontawesome-modal"
         size="4xl"
         role="dialog"
@@ -204,7 +204,16 @@ export default {
     components: {
         Button,
     },
-    props: ['field'],
+    props: {
+        field: {
+            type: Object,
+            required: true,
+        },
+        show: {
+            type: Boolean,
+            default: false,
+        },
+    },
     data: () => ({
         isLoading: false,
         isLoadingMore: false,

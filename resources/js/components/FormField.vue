@@ -56,7 +56,7 @@
                 />
 
                 <GeneralModal
-                    v-if="modalOpen"
+                    :show="modalOpen"
                     class="fontawesome-modal max-w-4xl"
                     :field="field"
                     @confirm="confirmModal"
@@ -85,8 +85,6 @@
             };
         },
         mounted() {
-            // Ensure our fill method is used (reassign after mixin's mounted)
-            console.log('[FA] mounted - reassigning fill');
             this.field.fill = this.fill;
         },
         computed: {
@@ -145,17 +143,11 @@
             },
 
             confirmModal(iconData) {
-                console.log('[FA] confirmModal - before:', this.value);
-                // Close modal FIRST, before updating value
-                this.modalOpen = false;
-                // Use setTimeout to let modal fully close before updating value
-                setTimeout(() => {
-                    this.value = iconData.value;
-                    console.log('[FA] confirmModal - value set to:', this.value);
-                    this.$nextTick(() => {
-                        this.refreshIcon();
-                    });
-                }, 50);
+                this.closeModal();
+                this.value = iconData.value;
+                this.$nextTick(() => {
+                    this.refreshIcon();
+                });
             },
 
             closeModal() {
@@ -190,7 +182,6 @@
              */
             fill(formData) {
                 const valueToSave = this.value || this.defaultIconOutput;
-                console.log('[FA] fill() - attribute:', this.field.attribute, 'value:', valueToSave, 'this.value:', this.value);
                 this.fillIfVisible(formData, this.field.attribute, valueToSave);
             },
 
