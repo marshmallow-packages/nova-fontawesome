@@ -678,11 +678,14 @@ export default {
             const iconValue = `${classString} fa-${icon.id}`;
             const iconSvg = this.getIconSvg(icon);
 
-            // Emit confirm with data, parent will handle closing
-            this.$emit('confirm', {
-                value: iconValue,
-                svg: iconSvg,
-            });
+            // Defer emit to next tick to avoid DOM mutation conflicts
+            // Vue's teleport unmounting can conflict with parent re-renders
+            setTimeout(() => {
+                this.$emit('confirm', {
+                    value: iconValue,
+                    svg: iconSvg,
+                });
+            }, 0);
         },
 
         handleClose() {

@@ -2,10 +2,7 @@
     <DefaultField :field="field">
         <template #field>
             <div class="fa-icon-field">
-                <div
-                    v-if="value"
-                    class="icon-display-wrapper"
-                >
+                <div v-if="value" class="icon-display-wrapper">
                     <div class="icon-display-box">
                         <button
                             type="button"
@@ -83,7 +80,19 @@
         data() {
             return {
                 modalOpen: false,
+                pendingValue: null,
             };
+        },
+        watch: {
+            modalOpen(newVal) {
+                // When modal closes and we have a pending value, apply it after modal transition completes
+                if (!newVal && this.pendingValue !== null) {
+                    // Nova's modal has a leave transition (~150-200ms), wait for it to complete
+                    setTimeout(() => {
+                        this.applyPendingValue();
+                    }, 300);
+                }
+            },
         },
         computed: {
             defaultIcon() {
@@ -141,15 +150,20 @@
             },
 
             confirmModal(iconData) {
-                console.log('confirmModal received:', iconData);
-                console.log('Current value before:', this.value);
-                this.value = iconData.value;
-                console.log('Value after assignment:', this.value);
+                // Store the pending value, will be applied after modal closes
+                this.pendingValue = iconData.value;
                 this.modalOpen = false;
             },
 
             closeModal() {
                 this.modalOpen = false;
+            },
+
+            applyPendingValue() {
+                if (this.pendingValue !== null) {
+                    this.value = this.pendingValue;
+                    this.pendingValue = null;
+                }
             },
 
             /*
@@ -172,7 +186,6 @@
              */
             fill(formData) {
                 const valueToSave = this.value || this.defaultIconOutput;
-                console.log('FontAwesome fill:', this.field.attribute, valueToSave);
                 formData.append(this.field.attribute, valueToSave);
             },
 
@@ -233,7 +246,11 @@
         cursor: pointer;
         opacity: 0;
         visibility: hidden;
-        transition: opacity 0.15s ease, visibility 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        transition:
+            opacity 0.15s ease,
+            visibility 0.15s ease,
+            background-color 0.15s ease,
+            color 0.15s ease;
         border: none;
     }
 
