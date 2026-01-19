@@ -187,8 +187,8 @@ return [
     'version' => env('FONTAWESOME_VERSION', '6.x'),
     'cache_duration' => env('FONTAWESOME_CACHE_DURATION', 3600),
     'free_only' => env('FONTAWESOME_FREE_ONLY', true),
-    'styles' => ['solid', 'regular', 'brands'],
-    'families' => ['classic', 'brands'],
+    'styles' => ['solid', 'regular', 'light', 'thin', 'duotone', 'brands'],
+    'families' => ['classic', 'sharp', 'duotone', 'sharp-duotone', 'brands'],
     'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
     'api_token' => env('FONTAWESOME_API_TOKEN'),
 

@@ -338,10 +338,10 @@ return [
     'free_only' => env('FONTAWESOME_FREE_ONLY', true),
 
     // Default styles to show
-    'styles' => ['solid', 'regular', 'brands'],
+    'styles' => ['solid', 'regular', 'light', 'thin', 'duotone', 'brands'],
 
     // Available icon families
-    'families' => ['classic', 'brands'],
+    'families' => ['classic', 'sharp', 'duotone', 'sharp-duotone', 'brands'],
 
     // Maximum search results per page
     'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
