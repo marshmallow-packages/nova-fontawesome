@@ -1,18 +1,15 @@
 <template>
     <DefaultField :field="field">
         <template #field>
-            <div>
+            <div class="fa-icon-field">
                 <div
                     v-if="value"
-                    class="fontawesome-form-field-display mb-4 flex items-center gap-4"
+                    class="icon-display-wrapper"
                 >
-                    <div
-                        class="display-icon relative inline-flex rounded-md dark:bg-gray-900 items-center justify-center p-1 border border-gray group"
-                        style="width: 4rem; height: 4rem"
-                    >
+                    <div class="icon-display-box">
                         <button
                             type="button"
-                            class="close-icon z-20 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-red-400 hover:text-white rounded-full shadow-sm transition-all cursor-pointer"
+                            class="close-button"
                             @click="clear"
                             title="Clear icon"
                         >
@@ -20,7 +17,6 @@
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
-                                style="width: 100%; height: 100%;"
                             >
                                 <path
                                     fill-rule="evenodd"
@@ -29,15 +25,13 @@
                                 />
                             </svg>
                         </button>
-                        <i :key="value" :class="value" style="font-size: 2rem; pointer-events: none;"></i>
+                        <i :key="value" :class="value" class="icon-preview"></i>
                     </div>
-                    <div class="icon-info text-sm">
-                        <div
-                            class="font-medium text-gray-700 dark:text-gray-300"
-                        >
+                    <div class="icon-info">
+                        <div class="icon-info-name">
                             {{ iconName }}
                         </div>
-                        <div class="text-gray-500 dark:text-gray-400 text-xs">
+                        <div class="icon-info-meta">
                             {{ iconFamily }} / {{ iconStyle }}
                         </div>
                     </div>
@@ -86,9 +80,11 @@
             Button,
             GeneralModal,
         },
-        data: () => ({
-            modalOpen: false,
-        }),
+        data() {
+            return {
+                modalOpen: false,
+            };
+        },
         computed: {
             defaultIcon() {
                 return this.field.default_icon || "";
@@ -145,16 +141,11 @@
             },
 
             confirmModal(iconData) {
-                // Store the value
-                const newValue = iconData.value;
-                // Close modal first
+                console.log('confirmModal received:', iconData);
+                console.log('Current value before:', this.value);
+                this.value = iconData.value;
+                console.log('Value after assignment:', this.value);
                 this.modalOpen = false;
-                // Update value in next tick after modal is removed from DOM
-                this.$nextTick(() => {
-                    setTimeout(() => {
-                        this.value = newValue;
-                    }, 0);
-                });
             },
 
             closeModal() {
@@ -180,10 +171,9 @@
              * Fill the given FormData object with the field's internal value.
              */
             fill(formData) {
-                formData.append(
-                    this.field.attribute,
-                    this.value || this.defaultIconOutput
-                );
+                const valueToSave = this.value || this.defaultIconOutput;
+                console.log('FontAwesome fill:', this.field.attribute, valueToSave);
+                formData.append(this.field.attribute, valueToSave);
             },
 
             /**
@@ -197,67 +187,103 @@
 </script>
 
 <style>
-    .fontawesome-modal .inner i {
-        font-size: 1.75rem;
-        max-width: 100%;
-    }
-
-    .display-icon i {
-        font-size: 2rem;
-        max-width: 100%;
-        max-height: 100%;
-    }
-
-    .display-icon > i svg {
-        width: 2rem;
-        height: 2rem;
-    }
-
-    .display-icon-svg {
+    .fa-icon-field .icon-display-wrapper {
         display: flex;
         align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .fa-icon-field .icon-display-box {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
-        max-width: 100%;
-        max-height: 100%;
-    }
-
-    .display-icon-svg :deep(svg) {
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        fill: currentColor;
-    }
-
-    .display-icon-svg svg {
-        fill: currentColor;
-    }
-
-    .fontawesome-form-field-display .display-icon {
+        width: 4rem;
+        height: 4rem;
+        padding: 0.25rem;
+        border-radius: 0.375rem;
+        border: 1px solid rgb(var(--colors-gray-300));
         overflow: visible;
     }
 
-    .fontawesome-form-field-display .display-icon .close-icon {
+    .dark .fa-icon-field .icon-display-box {
+        background-color: rgb(var(--colors-gray-900));
+        border-color: rgb(var(--colors-gray-700));
+    }
+
+    .fa-icon-field .icon-preview {
+        font-size: 2rem;
+        pointer-events: none;
+    }
+
+    .fa-icon-field .close-button {
         position: absolute;
         top: 0;
         right: 0;
+        z-index: 20;
         width: 18px;
         height: 18px;
-        padding: 4px;
+        padding: 3px;
+        transform: translate(50%, -50%);
+        background-color: rgb(var(--colors-gray-300));
+        color: rgb(var(--colors-gray-600));
+        border-radius: 9999px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
         opacity: 0;
         visibility: hidden;
-        cursor: pointer;
-        transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
-        transform: translate(50%, -50%);
+        transition: opacity 0.15s ease, visibility 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        border: none;
     }
 
-    .fontawesome-form-field-display .display-icon:hover .close-icon {
-        opacity: 0.85;
+    .fa-icon-field .close-button svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .dark .fa-icon-field .close-button {
+        background-color: rgb(var(--colors-gray-600));
+        color: rgb(var(--colors-gray-300));
+    }
+
+    .fa-icon-field .icon-display-box:hover .close-button {
+        opacity: 1;
         visibility: visible;
     }
 
-    .fontawesome-form-field-display .display-icon .close-icon:hover {
-        opacity: 1;
+    .fa-icon-field .close-button:hover {
+        background-color: rgb(var(--colors-red-500));
+        color: white;
+    }
+
+    .fa-icon-field .icon-info {
+        font-size: 0.875rem;
+    }
+
+    .fa-icon-field .icon-info-name {
+        font-weight: 500;
+        color: rgb(var(--colors-gray-700));
+    }
+
+    .dark .fa-icon-field .icon-info-name {
+        color: rgb(var(--colors-gray-300));
+    }
+
+    .fa-icon-field .icon-info-meta {
+        font-size: 0.75rem;
+        color: rgb(var(--colors-gray-500));
+    }
+
+    .dark .fa-icon-field .icon-info-meta {
+        color: rgb(var(--colors-gray-400));
+    }
+</style>
+
+<style>
+    .fontawesome-modal .inner i {
+        font-size: 1.75rem;
+        max-width: 100%;
     }
 
     .svg-inline--fa.fa-w-20 {
@@ -278,32 +304,5 @@
 
     .fontawesome-inner {
         overflow-y: auto;
-    }
-
-    .icon-name {
-        display: block;
-        font-size: 0.75rem;
-        margin-top: 0.5em;
-        background: rgb(var(--colors-gray-100));
-        padding: 0.25em 0.5em;
-        border-radius: 0.25rem;
-        color: rgb(var(--colors-gray-700));
-    }
-
-    .dark .icon-name {
-        background: rgb(var(--colors-gray-700));
-        color: rgb(var(--colors-gray-300));
-    }
-
-    .border-red {
-        border-color: rgb(var(--colors-red-500));
-    }
-
-    .border-gray {
-        border-color: rgb(var(--colors-gray-300));
-    }
-
-    .dark .border-gray {
-        border-color: rgb(var(--colors-gray-700));
     }
 </style>
