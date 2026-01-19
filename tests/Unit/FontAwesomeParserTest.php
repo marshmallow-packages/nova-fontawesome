@@ -2,8 +2,8 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests\Unit;
 
-use Marshmallow\NovaFontAwesome\Http\Support\FontAwesomeParser;
 use Marshmallow\NovaFontAwesome\Tests\TestCase;
+use Marshmallow\NovaFontAwesome\Http\Support\FontAwesomeParser;
 
 class FontAwesomeParserTest extends TestCase
 {

@@ -497,10 +497,10 @@ class FontAwesomeApiService
             if (!$icon) {
                 // Fallback to search
                 $results = $this->search($name, $family, $style);
-                $icons = $results['icons'] ?? [];
-                foreach ($icons as $result) {
-                    if ($result['id'] === $name) {
-                        $icon = $result;
+                $icons = $results['icons'];
+                foreach ($icons as $searchResult) {
+                    if ($searchResult['id'] === $name) {
+                        $icon = $searchResult;
                         break;
                     }
                 }

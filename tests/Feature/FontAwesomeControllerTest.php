@@ -54,10 +54,11 @@ class FontAwesomeControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'success',
                 'icons',
-            ])
-            ->assertJson(['success' => true]);
+                'hasMore',
+                'cursor',
+                'total',
+            ]);
     }
 
     /** @test */
@@ -69,32 +70,17 @@ class FontAwesomeControllerTest extends TestCase
     }
 
     /** @test */
-    public function it_can_get_popular_icons(): void
-    {
-        $response = $this->getJson('/nova-vendor/nova-fontawesome/popular');
-
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'success',
-                'icons',
-            ])
-            ->assertJson(['success' => true]);
-    }
-
-    /** @test */
     public function it_can_get_metadata(): void
     {
         $response = $this->getJson('/nova-vendor/nova-fontawesome/metadata');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'success',
                 'metadata' => [
                     'families',
                     'styles',
                 ],
-            ])
-            ->assertJson(['success' => true]);
+            ]);
     }
 
     /** @test */
@@ -122,10 +108,8 @@ class FontAwesomeControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'success',
                 'icon',
-            ])
-            ->assertJson(['success' => true]);
+            ]);
     }
 
     /** @test */
@@ -145,7 +129,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/icon/nonexistent-icon-12345');
 
         $response->assertStatus(404)
-            ->assertJson(['success' => false]);
+            ->assertJson(['error' => true]);
     }
 
     /** @test */
@@ -155,7 +139,7 @@ class FontAwesomeControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'success',
+                'status',
                 'diagnostics' => [
                     'timestamp',
                     'version',
@@ -173,12 +157,10 @@ class FontAwesomeControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'success',
                 'icons',
                 'fallback',
             ])
             ->assertJson([
-                'success' => true,
                 'fallback' => true,
             ]);
     }
@@ -189,7 +171,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/search?query=user&version=6.5.0');
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJsonStructure(['icons']);
     }
 
     /** @test */
@@ -198,7 +180,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/search?query=user&first=10');
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJsonStructure(['icons']);
     }
 
     /** @test */
@@ -228,7 +210,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/search?query=user&styles[]=solid');
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJsonStructure(['icons']);
     }
 
     /** @test */
@@ -237,7 +219,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/search?query=user&freeOnly=true');
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJsonStructure(['icons']);
     }
 
     /** @test */
@@ -277,7 +259,7 @@ class FontAwesomeControllerTest extends TestCase
         $response = $this->getJson('/nova-vendor/nova-fontawesome/search?query=test&styles[]=solid');
 
         $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJsonStructure(['icons']);
 
         $icons = $response->json('icons');
         $this->assertCount(1, $icons);

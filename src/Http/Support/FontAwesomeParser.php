@@ -112,8 +112,8 @@ class FontAwesomeParser
         foreach ($classes as $class) {
             if (
                 str_starts_with($class, 'fa-') &&
-                ! isset($this->styleMap[$class]) &&
-                ! isset($this->familyMap[$class])
+                !isset($this->styleMap[$class]) &&
+                !isset($this->familyMap[$class])
             ) {
                 return str_replace('fa-', '', $class);
             }
@@ -159,7 +159,7 @@ class FontAwesomeParser
     public function inferStyleFromFamily(?string $family = null): string
     {
         $family ??= $this->family();
-        $family = strtolower($family);
+        $family = mb_strtolower($family);
 
         // Brands family only has one style
         if ($family === 'brands') {
@@ -174,14 +174,14 @@ class FontAwesomeParser
     {
         $family ??= $this->family();
 
-        return strtoupper(str_replace('-', '_', $family));
+        return mb_strtoupper(str_replace('-', '_', $family));
     }
 
     public function toGraphqlStyle(?string $style = null): string
     {
         $style ??= $this->style();
 
-        return strtoupper($style);
+        return mb_strtoupper($style);
     }
 
     public function toGraphqlParams(?string $classString = null): array
@@ -226,6 +226,6 @@ class FontAwesomeParser
             return [];
         }
 
-        return array_map('trim', explode(' ', strtolower($classString)));
+        return array_map('trim', explode(' ', mb_strtolower($classString)));
     }
 }

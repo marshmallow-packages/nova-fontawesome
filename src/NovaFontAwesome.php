@@ -36,11 +36,11 @@ class NovaFontAwesome extends Field
     {
         $proCss = config('nova-fontawesome.pro_css', []);
 
-        if (! empty($proCss['kit_id'])) {
+        if (!empty($proCss['kit_id'])) {
             $this->kitId($proCss['kit_id']);
-        } elseif (! empty($proCss['css_url'])) {
+        } elseif (!empty($proCss['css_url'])) {
             $this->proCssUrl($proCss['css_url']);
-        } elseif (! empty($proCss['local_css'])) {
+        } elseif (!empty($proCss['local_css'])) {
             $this->proCssUrl(asset($proCss['local_css']));
         }
     }

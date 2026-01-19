@@ -2,10 +2,10 @@
 
 namespace Marshmallow\NovaFontAwesome\Tests\Unit;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
+use Illuminate\Support\Facades\Cache;
 use Marshmallow\NovaFontAwesome\Tests\TestCase;
+use Marshmallow\NovaFontAwesome\Services\FontAwesomeApiService;
 
 class FontAwesomeApiServiceTest extends TestCase
 {
@@ -60,8 +60,8 @@ class FontAwesomeApiServiceTest extends TestCase
         $this->assertNotEmpty($icons);
 
         foreach ($icons as $icon) {
-            $matchesId = str_contains(strtolower($icon['id']), 'user');
-            $matchesLabel = str_contains(strtolower($icon['label']), 'user');
+            $matchesId = str_contains(mb_strtolower($icon['id']), 'user');
+            $matchesLabel = str_contains(mb_strtolower($icon['label']), 'user');
             $this->assertTrue($matchesId || $matchesLabel);
         }
     }
