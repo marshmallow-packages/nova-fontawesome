@@ -672,8 +672,7 @@ class FontAwesomeApiService
             query GetMetadata($version: String!) {
                 release(version: $version) {
                     version
-                    families { id label }
-                    styles { id label }
+                    familyStyles { family style }
                 }
             }
             GRAPHQL;
@@ -699,15 +698,44 @@ class FontAwesomeApiService
                 return $this->getDefaultMetadata();
             }
 
-            $families = $release['families'] ?? [];
-            $styles = $release['styles'] ?? [];
+            $familyStyles = $release['familyStyles'] ?? [];
 
-            // Filter by configured families and styles from config
+            // Extract unique families and styles from familyStyles
             $configuredFamilies = config('nova-fontawesome.families', ['classic', 'brands']);
             $configuredStyles = config('nova-fontawesome.styles', ['solid', 'regular', 'brands']);
 
-            $families = array_values(array_filter($families, fn ($f) => in_array(mb_strtolower($f['id']), $configuredFamilies)));
-            $styles = array_values(array_filter($styles, fn ($s) => in_array(mb_strtolower($s['id']), $configuredStyles)));
+            $familyLabels = [
+                'classic' => 'Classic',
+                'brands' => 'Brands',
+                'duotone' => 'Duotone',
+                'sharp' => 'Sharp',
+                'sharp-duotone' => 'Sharp Duotone',
+            ];
+
+            $styleLabels = [
+                'solid' => 'Solid',
+                'regular' => 'Regular',
+                'light' => 'Light',
+                'thin' => 'Thin',
+                'duotone' => 'Duotone',
+                'brands' => 'Brands',
+            ];
+
+            $uniqueFamilies = [];
+            $uniqueStyles = [];
+            foreach ($familyStyles as $fs) {
+                $family = mb_strtolower($fs['family'] ?? '');
+                $style = mb_strtolower($fs['style'] ?? '');
+                if ($family && !isset($uniqueFamilies[$family])) {
+                    $uniqueFamilies[$family] = ['id' => $family, 'label' => $familyLabels[$family] ?? ucfirst($family)];
+                }
+                if ($style && !isset($uniqueStyles[$style])) {
+                    $uniqueStyles[$style] = ['id' => $style, 'label' => $styleLabels[$style] ?? ucfirst($style)];
+                }
+            }
+
+            $families = array_values(array_filter($uniqueFamilies, fn ($f) => in_array($f['id'], $configuredFamilies)));
+            $styles = array_values(array_filter($uniqueStyles, fn ($s) => in_array($s['id'], $configuredStyles)));
 
             $metadata = [
                 'families' => $families,
