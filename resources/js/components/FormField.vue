@@ -56,6 +56,7 @@
                 />
 
                 <GeneralModal
+                    v-if="modalOpen"
                     :show="modalOpen"
                     class="fontawesome-modal max-w-4xl"
                     :field="field"
