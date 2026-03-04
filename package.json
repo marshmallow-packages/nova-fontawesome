@@ -13,9 +13,9 @@
         "laravel-nova-devtool": "file:vendor/laravel/nova-devtool",
         "laravel-nova-ui": "^0.4.12",
         "vite": "^6.4.1",
-        "vue": "^3.5.27"
+        "vue": "^3.5.29"
     },
     "dependencies": {
-        "lodash": "^4.17.21"
+        "lodash": "^4.17.23"
     }
 }
