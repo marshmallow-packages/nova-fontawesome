@@ -288,7 +288,7 @@ class FontAwesomeApiService
 
         $data = $response->json();
 
-        if (isset($data['errors'])) {
+        if (isset($data['errors']) && empty($data['data']['search'])) {
             throw new Exception('GraphQL errors: ' . json_encode($data['errors']));
         }
 
