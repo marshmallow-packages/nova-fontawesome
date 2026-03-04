@@ -153,6 +153,8 @@
 
             closeModal() {
                 this.modalOpen = false;
+                // Re-register fill since GeneralModal's FormField mixin overwrites it on mount
+                this.field.fill = this.fill;
             },
 
             /*
