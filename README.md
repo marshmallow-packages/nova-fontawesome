@@ -30,7 +30,7 @@ A Laravel Nova field for selecting Font Awesome icons using the Font Awesome Gra
 
 - PHP ^8.2
 - Laravel Nova ^5.0
-- Laravel 11.x or 12.x
+- Laravel 11.x, 12.x or 13.x
 - Font Awesome 6.x or 7.x
 
 > **Note:** For Nova 4 support, use version 1.x: `composer require marshmallow/nova-fontawesome:^1.0`
@@ -71,13 +71,19 @@ The package needs Font Awesome CSS to render icons. Choose one of these options:
 No setup needed - this is the fallback if no other strategy is configured:
 ```env
 FONTAWESOME_CSS_STRATEGY=cdn
-FONTAWESOME_CDN_VERSION=6.5.1
+FONTAWESOME_CDN_VERSION=7.0.1
 ```
 
 ### Step 3: Publish config (optional)
 
 ```bash
 php artisan vendor:publish --tag=nova-fontawesome-config
+```
+
+You can also publish the translation files if you want to customise the UI strings:
+
+```bash
+php artisan vendor:publish --tag=nova-fontawesome-lang
 ```
 
 ### Step 4: Clear cache
@@ -133,7 +139,7 @@ Load free icons from CDN (default fallback):
 
 ```env
 FONTAWESOME_CSS_STRATEGY=cdn
-FONTAWESOME_CDN_VERSION=6.5.1
+FONTAWESOME_CDN_VERSION=7.0.1
 ```
 
 ## Usage
@@ -359,20 +365,20 @@ After publishing the config file, you can modify `config/nova-fontawesome.php`:
 
 ```php
 return [
-    // Default Font Awesome version (6.x or 7.x)
-    'version' => env('FONTAWESOME_VERSION', '6.x'),
+    // Default Font Awesome version (6.x or 7.x, or a specific version like 7.0.1)
+    'version' => env('FONTAWESOME_VERSION', '7.0.1'),
 
-    // Cache duration in seconds (default: 1 hour)
+    // Cache duration in seconds (0 disables caching; default: 1 hour)
     'cache_duration' => env('FONTAWESOME_CACHE_DURATION', 3600),
 
     // Only show free icons by default
     'free_only' => env('FONTAWESOME_FREE_ONLY', true),
 
-    // Default styles to show
-    'styles' => ['solid', 'regular', 'light', 'thin', 'duotone', 'brands'],
+    // Default styles to show (free: solid, regular, brands)
+    'styles' => ['solid', 'regular', 'brands'],
 
-    // Available icon families
-    'families' => ['classic', 'sharp', 'duotone', 'sharp-duotone', 'brands'],
+    // Available icon families (free: classic, brands)
+    'families' => ['classic', 'brands'],
 
     // Maximum search results per page
     'max_results' => env('FONTAWESOME_MAX_RESULTS', 100),
@@ -384,17 +390,20 @@ return [
     'css' => [
         'strategy' => env('FONTAWESOME_CSS_STRATEGY', 'self-hosted'),
         'path' => env('FONTAWESOME_CSS_PATH', '/vendor/fontawesome/css/all.min.css'),
+        'base_path' => env('FONTAWESOME_CSS_BASE_PATH', 'vendor/fontawesome/css'),
+        'webfonts_path' => env('FONTAWESOME_WEBFONTS_PATH', 'vendor/fontawesome/webfonts'),
+        'vite_path' => env('FONTAWESOME_VITE_PATH', 'resources/css/fontawesome'),
         'kit_id' => env('FONTAWESOME_KIT_ID'),
-        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '6.5.1'),
+        'cdn_version' => env('FONTAWESOME_CDN_VERSION', '7.0.1'),
     ],
 
     // Client-side fuzzy search settings
     'fuzzy_search' => [
         'enabled' => true,
-        'threshold' => 0.3,
+        'threshold' => 0.3, // 0-1, lower = stricter matching
     ],
 
-    // Auto-convert legacy FA5 classes to modern format
+    // Auto-convert legacy FA5 classes to modern format when saving
     'convert_legacy_format' => true,
 ];
 ```
@@ -404,7 +413,7 @@ return [
 Add these to your `.env` file to customize the configuration:
 
 ```env
-FONTAWESOME_VERSION=6.x
+FONTAWESOME_VERSION=7.0.1
 FONTAWESOME_CACHE_DURATION=3600
 FONTAWESOME_FREE_ONLY=true
 FONTAWESOME_MAX_RESULTS=100
@@ -553,9 +562,9 @@ composer lint-check  # Check without fixing
 composer analyse
 ```
 
-## Licence
+## License
 
-The MIT License (MIT). Please see [License File](LICENCE) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ## Sponsorships
 
